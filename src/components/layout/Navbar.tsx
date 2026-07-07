@@ -3,12 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { Search, Menu, X, LogOut, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import axiosInstance from '@/lib/axios';
 
-// DEFINISI TIPE DATA (Jalan Ksatria: No 'any')
+// Interface untuk data profil lu dari API
 export interface UserProfile {
   id: number;
   name: string;
@@ -19,18 +18,14 @@ export interface UserProfile {
 }
 
 export default function Navbar() {
-  const router = useRouter();
-  
-  // State Management
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
-  // Auth State
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
 
-  // Fetch Data User saat komponen dimuat
+  // Efek ini jalan setiap kali halaman di-reload (seperti saat sukses login)
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
@@ -40,10 +35,10 @@ export default function Navbar() {
           return;
         }
 
-        // Hit API My Profile
+        // Tembak API buat ambil data user lu pakai token tadi
         const response = await axiosInstance.get('/me');
-        // Sesuaikan dengan struktur response lu (asumsi data user ada di response.data.data)
-        setUser(response.data.data); 
+        const userData = response.data.data.user || response.data.data;
+        setUser(userData); 
         setIsLoggedIn(true);
       } catch (error) {
         console.error("Gagal verifikasi token:", error);
@@ -62,7 +57,7 @@ export default function Navbar() {
     setIsLoggedIn(false);
     setUser(null);
     setIsDropdownOpen(false);
-    router.push('/login'); // Tendang ke halaman login
+    window.location.href = '/login'; // Hard redirect ke login biar bersih
   };
 
   return (
@@ -86,27 +81,25 @@ export default function Navbar() {
           />
         </div>
 
-        {/* RIGHT ACTIONS (Conditional Rendering) */}
+        {/* RIGHT ACTIONS */}
         <div className="flex items-center">
           {isLoading ? (
-            // 1. SKELETON LOADING
+            // 1. LOADING SKELETON
             <div className="flex items-center gap-[13px] animate-pulse">
               <div className="hidden md:block h-6 w-20 bg-neutral-900 rounded-md"></div>
               <div className="w-10 h-10 md:w-12 md:h-12 bg-neutral-900 rounded-full"></div>
             </div>
           ) : isLoggedIn && user ? (
-            // 2. AFTER LOGIN (Desktop & Mobile Profile)
+            // 2. AFTER LOGIN (Tampilan yang selama ini lu cari!)
             <div className="flex items-center gap-4 md:gap-[13px] relative">
-              {/* Search icon buat mobile */}
               <Search className="w-5 h-5 text-neutral-25 md:hidden" />
               
-              {/* Avatar Toggle */}
               <button 
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-[13px] focus:outline-none"
+                className="flex items-center gap-[13px] focus:outline-none cursor-pointer"
               >
                 <div className="hidden md:block text-md font-bold text-neutral-25 text-right">
-                  {user.name}
+                  {user.name || user.username}
                 </div>
                 <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-full bg-neutral-900 border border-neutral-800 overflow-hidden flex items-center justify-center hover:opacity-80 transition-opacity">
                   {user.avatarUrl ? (
@@ -117,12 +110,12 @@ export default function Navbar() {
                 </div>
               </button>
 
-              {/* Dropdown Menu Logout */}
+              {/* DROPDOWN LOGOUT */}
               {isDropdownOpen && (
                 <div className="absolute right-0 top-[110%] w-48 bg-neutral-1000 border border-neutral-900 rounded-2xl py-2 shadow-2xl flex flex-col z-50 animate-in fade-in slide-in-from-top-2">
                   <button 
                     onClick={handleLogout}
-                    className="px-4 py-2 w-full text-left text-sm font-bold text-[#ef4444] hover:bg-neutral-900 transition-colors flex items-center gap-2"
+                    className="px-4 py-2 w-full text-left text-sm font-bold text-[#ef4444] hover:bg-neutral-900 transition-colors flex items-center gap-2 cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />
                     Logout
@@ -133,7 +126,6 @@ export default function Navbar() {
           ) : (
             // 3. BEFORE LOGIN
             <>
-              {/* Auth Buttons (Desktop) */}
               <div className="hidden md:flex gap-3">
                 <Link href="/login" passHref>
                   <Button variant="outline" className="rounded-full text-neutral-25 border border-neutral-900 hover:bg-neutral-900 px-6">
@@ -147,10 +139,9 @@ export default function Navbar() {
                 </Link>
               </div>
 
-              {/* Mobile Icons (Search & Hamburger) */}
               <div className="flex md:hidden items-center gap-4">
                 <Search className="w-5 h-5 text-neutral-25" />
-                <button onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="cursor-pointer">
                   {isMenuOpen ? <X className="text-neutral-25" /> : <Menu className="text-neutral-25" />}
                 </button>
               </div>
@@ -159,7 +150,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* MOBILE OPEN MENU (Hanya muncul saat Sebelum Login & Menu diklik) */}
+      {/* MOBILE MENU (Hanya muncul saat Sebelum Login & Icon diklik) */}
       {isMenuOpen && !isLoggedIn && (
         <div className="md:hidden w-full bg-black border-b border-neutral-900 p-4 flex flex-col gap-4 animate-in slide-in-from-top-5">
           <div className="flex gap-2 w-full">

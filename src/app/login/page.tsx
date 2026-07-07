@@ -1,13 +1,15 @@
 'use client';
 
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import axiosInstance from '@/lib/axios';
+import { toast } from 'sonner';
+import { Eye, EyeOff } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email("Email tidak valid"),
@@ -17,39 +19,47 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   });
 
   const onSubmit = async (data: LoginForm) => {
+    setIsLoading(true);
     try {
       const response = await axiosInstance.post('/auth/login', {
         email: data.email,
         password: data.password,
       });
 
-      localStorage.setItem('token', response.data.token);
-      alert("Login Berhasil!");
-      router.push('/'); // Sesuaikan tujuan redirect setelah login sukses
+      // Simpan token dari respon API
+      localStorage.setItem('token', response.data.data.token);
+      
+      toast.success("Welcome Back! Login Berhasil.");
+      
+      // JALAN KSATRIA: Paksa browser reload full ke halaman home
+      // Ini akan memicu Navbar untuk nge-fetch ulang token & profil
+      window.location.assign('/');
+
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message || "Login gagal, cek kembali email/password";
-        alert(message);
+        toast.error(message);
       } else {
-        alert("Terjadi kesalahan yang tidak diketahui");
+        toast.error("Terjadi kesalahan yang tidak diketahui");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    // Background Hitam Pekat
     <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#000000]">
       
-      {/* ==================== GRADIENT GLOW (Figma Exact Vibe) ==================== */}
+      {/* GRADIENT GLOW */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        {/* Layer 1: Ungu Gelap (Base) menyebar dari bawah */}
         <div 
           className="absolute bottom-[-40%] left-[-10%] w-[120%] h-[80%] rounded-[100%]"
           style={{
@@ -58,7 +68,6 @@ export default function LoginPage() {
             opacity: 0.8
           }}
         />
-        {/* Layer 2: Ungu Terang (Highlight) di tengah bawah */}
         <div 
           className="absolute bottom-[-30%] left-[10%] w-[80%] h-[60%] rounded-[100%]"
           style={{
@@ -69,18 +78,13 @@ export default function LoginPage() {
         />
       </div>
 
-      {/* ==================== LOGIN CARD ==================== */}
+      {/* LOGIN CARD */}
       <div className="z-10 flex flex-col items-center w-[446px] p-[40px_24px] gap-[24px] bg-[rgba(0,0,0,0.2)] border border-[#181D27] rounded-[16px] backdrop-blur-[40px]">
         
         {/* Logo & Title */}
         <div className="flex flex-col items-center gap-[16px] w-full">
           <div className="flex items-center gap-[11px]">
-            <Image 
-              src="/assets/Logo.svg" 
-              alt="Sociality Logo" 
-              width={30} 
-              height={30} 
-            />
+            <Image src="/assets/Logo.svg" alt="Sociality Logo" width={30} height={30} />
             <h1 className="text-[24px] font-bold text-[#FDFDFD] leading-[36px] font-['SF_Pro']">Sociality</h1>
           </div>
           <h2 className="text-[24px] font-bold text-[#FDFDFD] leading-[36px] font-['SF_Pro']">Welcome Back!</h2>
@@ -92,7 +96,7 @@ export default function LoginPage() {
           {/* Email */}
           <div className="flex flex-col gap-[2px]">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Email</label>
-            <div className="flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px]">
+            <div className="flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-brand-500 transition-colors">
               <input
                 {...form.register("email")}
                 type="email"
@@ -100,30 +104,42 @@ export default function LoginPage() {
                 className="w-full bg-transparent text-[16px] text-[#FFFFFF] leading-[30px] tracking-[-0.02em] placeholder:text-[#535862] outline-none font-['SF_Pro']"
               />
             </div>
+            {form.formState.errors.email && (
+              <span className="text-sm text-red-500 mt-1">{form.formState.errors.email.message}</span>
+            )}
           </div>
 
           {/* Password */}
           <div className="flex flex-col gap-[2px]">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Password</label>
-            <div className="relative flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px]">
+            <div className="relative flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-brand-500 transition-colors">
               <input
                 {...form.register("password")}
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
                 className="w-full bg-transparent text-[16px] text-[#FFFFFF] leading-[30px] tracking-[-0.02em] placeholder:text-[#535862] outline-none pr-8 font-['SF_Pro']"
               />
-              {/* Eye Icon Shape */}
-              <div className="absolute right-[16px] top-[18px] w-[16.4px] h-[11.6px] border-[1.67px] border-[#717680] rounded-[2px]" />
+              <button 
+                type="button" 
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-[16px] flex items-center justify-center text-[#717680] hover:text-[#FDFDFD] transition-colors cursor-pointer"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
+            {form.formState.errors.password && (
+              <span className="text-sm text-red-500 mt-1">{form.formState.errors.password.message}</span>
+            )}
           </div>
 
           {/* Button & Links */}
           <div className="flex flex-col gap-[16px] w-[398px]">
             <button 
               type="submit"
-              className="flex justify-center items-center w-full h-[48px] p-[8px] gap-[8px] bg-[#6936F2] hover:bg-[#522BC8] rounded-[100px] text-[16px] font-bold text-[#FDFDFD] leading-[30px] tracking-[-0.02em] font-['SF_Pro'] transition-colors"
+              disabled={isLoading}
+              className="flex justify-center items-center w-full h-[48px] p-[8px] gap-[8px] bg-[#6936F2] hover:bg-[#522BC8] disabled:opacity-50 disabled:cursor-not-allowed rounded-[100px] text-[16px] font-bold text-[#FDFDFD] leading-[30px] tracking-[-0.02em] font-['SF_Pro'] transition-colors cursor-pointer"
             >
-              Login
+              {isLoading ? 'Logging in...' : 'Login'}
             </button>
 
             <div className="flex justify-center items-center gap-[4px] h-[30px]">
