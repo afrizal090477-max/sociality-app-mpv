@@ -3,11 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter, useSearchParams } from 'next/navigation'; // 👈 Tambah import ini
 import { Search, Menu, X, LogOut, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import axiosInstance from '@/lib/axios';
 
-// Interface untuk data profil lu dari API
 export interface UserProfile {
   id: number;
   name: string;
@@ -18,6 +18,9 @@ export interface UserProfile {
 }
 
 export default function Navbar() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
@@ -25,7 +28,9 @@ export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
 
-  // Efek ini jalan setiap kali halaman di-reload (seperti saat sukses login)
+  // 👈 JALAN KSATRIA: Mesin Live Search (State & Debounce)
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
@@ -35,7 +40,6 @@ export default function Navbar() {
           return;
         }
 
-        // Tembak API buat ambil data user lu pakai token tadi
         const response = await axiosInstance.get('/me');
         const userData = response.data.data.user || response.data.data;
         setUser(userData); 
@@ -52,12 +56,27 @@ export default function Navbar() {
     fetchUserProfile();
   }, []);
 
+  // 👈 JALAN KSATRIA: Logika Debouncing (Nunggu 500ms baru update URL)
+  useEffect(() => {
+    const delayDebounceId = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (searchQuery) {
+        params.set('search', searchQuery);
+      } else {
+        params.delete('search');
+      }
+      router.push(`/?${params.toString()}`);
+    }, 500);
+
+    return () => clearTimeout(delayDebounceId);
+  }, [searchQuery, router, searchParams]);
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     setIsLoggedIn(false);
     setUser(null);
     setIsDropdownOpen(false);
-    window.location.href = '/login'; // Hard redirect ke login biar bersih
+    window.location.href = '/login'; 
   };
 
   return (
@@ -77,6 +96,8 @@ export default function Navbar() {
           <Search className="w-5 h-5 text-neutral-500" />
           <input 
             placeholder="Search" 
+            value={searchQuery} // 👈 Terikat state searchQuery
+            onChange={(e) => setSearchQuery(e.target.value)} // 👈 Update state pas ngetik
             className="bg-transparent border-none outline-none text-neutral-600 text-sm w-full font-sans"
           />
         </div>
@@ -84,13 +105,11 @@ export default function Navbar() {
         {/* RIGHT ACTIONS */}
         <div className="flex items-center">
           {isLoading ? (
-            // 1. LOADING SKELETON
             <div className="flex items-center gap-[13px] animate-pulse">
               <div className="hidden md:block h-6 w-20 bg-neutral-900 rounded-md"></div>
               <div className="w-10 h-10 md:w-12 md:h-12 bg-neutral-900 rounded-full"></div>
             </div>
           ) : isLoggedIn && user ? (
-            // 2. AFTER LOGIN (Tampilan yang selama ini lu cari!)
             <div className="flex items-center gap-4 md:gap-[13px] relative">
               <Search className="w-5 h-5 text-neutral-25 md:hidden" />
               
@@ -110,7 +129,6 @@ export default function Navbar() {
                 </div>
               </button>
 
-              {/* DROPDOWN LOGOUT */}
               {isDropdownOpen && (
                 <div className="absolute right-0 top-[110%] w-48 bg-neutral-1000 border border-neutral-900 rounded-2xl py-2 shadow-2xl flex flex-col z-50 animate-in fade-in slide-in-from-top-2">
                   <button 
@@ -124,7 +142,6 @@ export default function Navbar() {
               )}
             </div>
           ) : (
-            // 3. BEFORE LOGIN
             <>
               <div className="hidden md:flex gap-3">
                 <Link href="/login" passHref>
@@ -150,7 +167,6 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* MOBILE MENU (Hanya muncul saat Sebelum Login & Icon diklik) */}
       {isMenuOpen && !isLoggedIn && (
         <div className="md:hidden w-full bg-black border-b border-neutral-900 p-4 flex flex-col gap-4 animate-in slide-in-from-top-5">
           <div className="flex gap-2 w-full">
