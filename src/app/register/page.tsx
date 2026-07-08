@@ -28,8 +28,6 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const router = useRouter();
-  
-  // State Management untuk UI
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -41,21 +39,19 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterForm) => {
     setIsLoading(true);
     try {
-      const payload = {
+      await axiosInstance.post('/auth/register', {
         name: data.name,
         username: data.username,
         phone: data.phone,
         email: data.email,
         password: data.password,
-      };
-      
-      await axiosInstance.post('/auth/register', payload);
+      });
       
       toast.success("Registrasi Berhasil! Silakan Login.");
       router.push('/login'); 
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
-        const message = error.response?.data?.message || "Gagal Register, silakan cek kembali data lu.";
+        const message = error.response?.data?.message || "Gagal Register, cek kembali data lu.";
         toast.error(message);
       } else {
         toast.error("Terjadi kesalahan yang tidak diketahui");
@@ -66,114 +62,93 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center bg-black py-[40px] md:py-0 overflow-x-hidden">
+    <div 
+      className="relative flex min-h-screen w-full items-center justify-center py-[40px] px-6"
+      style={{
+        backgroundImage: "url('/assets/Gradient.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat"
+      }}
+    >
       
-      {/* ==================== GRADIENT GLOW (PERFECT U-SHAPE) ==================== */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <div 
-          className="absolute -bottom-[20%] -left-[20%] w-[80vw] h-[85vh] rounded-full"
-          style={{
-            background: 'linear-gradient(230.59deg, #AC88FF 33.13%, #AD3AE7 63.19%)',
-            filter: 'blur(160px)',
-            opacity: 0.7
-          }}
-        />
-        <div 
-          className="absolute -bottom-[20%] -right-[20%] w-[80vw] h-[85vh] rounded-full"
-          style={{
-            background: 'linear-gradient(270deg, #5613A3 38.99%, #522BC8 77.96%)',
-            filter: 'blur(160px)',
-            opacity: 0.7
-          }}
-        />
-        <div 
-          className="absolute -bottom-[40%] left-0 right-0 w-full h-[60vh] rounded-full"
-          style={{
-            background: '#522BC8',
-            filter: 'blur(150px)',
-            opacity: 0.9
-          }}
-        />
-      </div>
-
-      {/* ==================== REGISTER CARD ==================== */}
-      <div className="z-10 flex flex-col items-center w-[345px] md:w-[523px] p-[32px_16px] md:p-[40px_24px] gap-[16px] md:gap-[24px] bg-[rgba(0,0,0,0.2)] border border-[#181D27] rounded-[16px] backdrop-blur-[50px] my-auto">
+      <div className="z-10 flex flex-col items-center w-[345px] md:w-[523px] p-[32px_16px] md:p-[40px_24px] gap-[16px] md:gap-[24px] bg-[rgba(10,13,18,0.2)] border border-[#181D27] rounded-[16px] backdrop-blur-[50px] shadow-2xl">
         
         {/* Logo & Title */}
         <div className="flex flex-col items-center gap-[16px] w-full">
           <div className="flex items-center gap-[11px]">
             <Image src="/assets/Logo.svg" alt="Sociality Logo" width={30} height={30} />
-            <h1 className="text-[24px] font-bold text-white leading-[36px] font-['SF_Pro']">Sociality</h1>
+            <h1 className="text-[24px] font-bold text-[#FDFDFD] leading-[36px] font-['SF_Pro']">Sociality</h1>
           </div>
-          <h2 className="text-[24px] font-bold text-white leading-[36px] font-['SF_Pro'] text-center">Register</h2>
+          <h2 className="text-[24px] font-bold text-[#FDFDFD] leading-[36px] font-['SF_Pro'] text-center">Register</h2>
         </div>
 
         {/* Form */}
-        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full md:w-[475px] flex flex-col gap-[16px]">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="w-[313px] md:w-[475px] flex flex-col gap-[16px] md:gap-[20px]">
           
           {/* Name */}
-          <div className="flex flex-col gap-[2px]">
-            <label className="text-[14px] font-bold text-white leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Name</label>
+          <div className="flex flex-col gap-[2px] w-full">
+            <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Name</label>
             <div className="flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
               <input
                 {...form.register("name")}
                 placeholder="Enter your name"
-                className="w-full bg-transparent text-[16px] text-white leading-[30px] tracking-[-0.02em] placeholder:text-[#535862] outline-none font-['SF_Pro']"
+                className="w-full bg-transparent text-[16px] text-[#FFFFFF] leading-[30px] tracking-[-0.02em] placeholder:text-[#535862] outline-none font-['SF_Pro']"
               />
             </div>
             {form.formState.errors.name && <span className="text-sm text-red-500">{form.formState.errors.name.message}</span>}
           </div>
 
           {/* Username */}
-          <div className="flex flex-col gap-[2px]">
-            <label className="text-[14px] font-bold text-white leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Username</label>
+          <div className="flex flex-col gap-[2px] w-full">
+            <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Username</label>
             <div className="flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
               <input
                 {...form.register("username")}
                 placeholder="Enter your username"
-                className="w-full bg-transparent text-[16px] text-white leading-[30px] tracking-[-0.02em] placeholder:text-[#535862] outline-none font-['SF_Pro']"
+                className="w-full bg-transparent text-[16px] text-[#FFFFFF] leading-[30px] tracking-[-0.02em] placeholder:text-[#535862] outline-none font-['SF_Pro']"
               />
             </div>
             {form.formState.errors.username && <span className="text-sm text-red-500">{form.formState.errors.username.message}</span>}
           </div>
 
           {/* Number Phone */}
-          <div className="flex flex-col gap-[2px]">
-            <label className="text-[14px] font-bold text-white leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Number Phone</label>
+          <div className="flex flex-col gap-[2px] w-full">
+            <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Number Phone</label>
             <div className="flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
               <input
                 {...form.register("phone")}
                 type="tel"
                 placeholder="Enter your number phone"
-                className="w-full bg-transparent text-[16px] text-white leading-[30px] tracking-[-0.02em] placeholder:text-[#535862] outline-none font-['SF_Pro']"
+                className="w-full bg-transparent text-[16px] text-[#FFFFFF] leading-[30px] tracking-[-0.02em] placeholder:text-[#535862] outline-none font-['SF_Pro']"
               />
             </div>
             {form.formState.errors.phone && <span className="text-sm text-red-500">{form.formState.errors.phone.message}</span>}
           </div>
 
-          {/* Email (YANG TADI HILANG KITA TAMBAHIN DI SINI) */}
-          <div className="flex flex-col gap-[2px]">
-            <label className="text-[14px] font-bold text-white leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Email</label>
+          {/* Email */}
+          <div className="flex flex-col gap-[2px] w-full">
+            <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Email</label>
             <div className="flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
               <input
                 {...form.register("email")}
                 type="email"
                 placeholder="Enter your email"
-                className="w-full bg-transparent text-[16px] text-white leading-[30px] tracking-[-0.02em] placeholder:text-[#535862] outline-none font-['SF_Pro']"
+                className="w-full bg-transparent text-[16px] text-[#FFFFFF] leading-[30px] tracking-[-0.02em] placeholder:text-[#535862] outline-none font-['SF_Pro']"
               />
             </div>
             {form.formState.errors.email && <span className="text-sm text-red-500">{form.formState.errors.email.message}</span>}
           </div>
 
           {/* Password */}
-          <div className="flex flex-col gap-[2px]">
-            <label className="text-[14px] font-bold text-white leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Password</label>
+          <div className="flex flex-col gap-[2px] w-full">
+            <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Password</label>
             <div className="relative flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
               <input
                 {...form.register("password")}
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
-                className="w-full bg-transparent text-[16px] text-white leading-[30px] tracking-[-0.02em] placeholder:text-[#535862] outline-none pr-8 font-['SF_Pro']"
+                className="w-full bg-transparent text-[16px] text-[#FFFFFF] leading-[30px] tracking-[-0.02em] placeholder:text-[#535862] outline-none pr-8 font-['SF_Pro']"
               />
               <button 
                 type="button" 
@@ -187,14 +162,14 @@ export default function RegisterPage() {
           </div>
 
           {/* Confirm Password */}
-          <div className="flex flex-col gap-[2px]">
-            <label className="text-[14px] font-bold text-white leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Confirm Password</label>
+          <div className="flex flex-col gap-[2px] w-full">
+            <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Confirm Password</label>
             <div className="relative flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
               <input
                 {...form.register("confirmPassword")}
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Enter your confirm password"
-                className="w-full bg-transparent text-[16px] text-white leading-[30px] tracking-[-0.02em] placeholder:text-[#535862] outline-none pr-8 font-['SF_Pro']"
+                className="w-full bg-transparent text-[16px] text-[#FFFFFF] leading-[30px] tracking-[-0.02em] placeholder:text-[#535862] outline-none pr-8 font-['SF_Pro']"
               />
               <button 
                 type="button" 
@@ -212,13 +187,13 @@ export default function RegisterPage() {
             <button 
               type="submit"
               disabled={isLoading}
-              className="flex justify-center items-center w-full h-[48px] p-[8px] gap-[8px] bg-[#6936F2] hover:bg-[#522BC8] disabled:opacity-50 disabled:cursor-not-allowed rounded-[100px] text-[16px] font-bold text-white leading-[30px] tracking-[-0.02em] font-['SF_Pro'] transition-colors cursor-pointer"
+              className="flex justify-center items-center w-full h-[48px] p-[8px] gap-[8px] bg-[#6936F2] hover:bg-[#522BC8] disabled:opacity-50 disabled:cursor-not-allowed rounded-[100px] text-[16px] font-bold text-[#FDFDFD] leading-[30px] tracking-[-0.02em] font-['SF_Pro'] transition-colors hover:shadow-[0_0_17px_rgba(105,54,242,0.6)] cursor-pointer"
             >
               {isLoading ? 'Submitting...' : 'Submit'}
             </button>
 
             <div className="flex justify-center items-center gap-[4px] h-[30px]">
-              <span className="text-[14px] md:text-[16px] font-semibold text-white leading-[28px] md:leading-[30px] tracking-[-0.02em] font-['SF_Pro']">
+              <span className="text-[14px] md:text-[16px] font-semibold text-[#FDFDFD] leading-[28px] md:leading-[30px] tracking-[-0.02em] font-['SF_Pro']">
                 Already have an account?
               </span>
               <Link href="/login" className="text-[14px] md:text-[16px] font-bold text-[#7F51F9] leading-[28px] md:leading-[30px] tracking-[-0.01em] font-['SF_Pro'] hover:underline">
@@ -226,8 +201,8 @@ export default function RegisterPage() {
               </Link>
             </div>
           </div>
+          
         </form>
-
       </div>
     </div>
   );

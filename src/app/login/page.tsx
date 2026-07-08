@@ -34,15 +34,9 @@ export default function LoginPage() {
         password: data.password,
       });
 
-      // Simpan token dari respon API
       localStorage.setItem('token', response.data.data.token);
-      
       toast.success("Welcome Back! Login Berhasil.");
-      
-      // JALAN KSATRIA: Paksa browser reload full ke halaman home
-      // Ini akan memicu Navbar untuk nge-fetch ulang token & profil
       window.location.assign('/');
-
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message || "Login gagal, cek kembali email/password";
@@ -56,30 +50,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#000000]">
-      
-      {/* GRADIENT GLOW */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <div 
-          className="absolute bottom-[-40%] left-[-10%] w-[120%] h-[80%] rounded-[100%]"
-          style={{
-            background: 'linear-gradient(270deg, #5613A3 38.99%, #522BC8 77.96%)',
-            filter: 'blur(150px)', 
-            opacity: 0.8
-          }}
-        />
-        <div 
-          className="absolute bottom-[-30%] left-[10%] w-[80%] h-[60%] rounded-[100%]"
-          style={{
-            background: 'linear-gradient(230.59deg, #AC88FF 33.13%, #AD3AE7 63.19%)',
-            filter: 'blur(120px)',
-            opacity: 0.6
-          }}
-        />
-      </div>
-
-      {/* LOGIN CARD */}
-      <div className="z-10 flex flex-col items-center w-[446px] p-[40px_24px] gap-[24px] bg-[rgba(0,0,0,0.2)] border border-[#181D27] rounded-[16px] backdrop-blur-[40px]">
+    <div 
+      className="relative flex min-h-screen w-full items-center justify-center py-[40px] px-6"
+      style={{
+        backgroundImage: "url('/assets/Gradient.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat"
+      }}
+    >
+      <div className="z-10 flex flex-col items-center w-[345px] md:w-[446px] p-[32px_16px] md:p-[40px_24px] gap-[16px] md:gap-[24px] bg-[rgba(10,13,18,0.2)] border border-[#181D27] rounded-[16px] backdrop-blur-[20px] shadow-2xl">
         
         {/* Logo & Title */}
         <div className="flex flex-col items-center gap-[16px] w-full">
@@ -87,16 +67,16 @@ export default function LoginPage() {
             <Image src="/assets/Logo.svg" alt="Sociality Logo" width={30} height={30} />
             <h1 className="text-[24px] font-bold text-[#FDFDFD] leading-[36px] font-['SF_Pro']">Sociality</h1>
           </div>
-          <h2 className="text-[24px] font-bold text-[#FDFDFD] leading-[36px] font-['SF_Pro']">Welcome Back!</h2>
+          <h2 className="text-[20px] md:text-[24px] font-bold text-[#FDFDFD] leading-[34px] md:leading-[36px] font-['SF_Pro'] text-center">Welcome Back!</h2>
         </div>
 
         {/* Form */}
-        <form onSubmit={form.handleSubmit(onSubmit)} className="w-[398px] flex flex-col gap-[20px]">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="w-[313px] md:w-[398px] flex flex-col gap-[20px]">
           
           {/* Email */}
-          <div className="flex flex-col gap-[2px]">
+          <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Email</label>
-            <div className="flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-brand-500 transition-colors">
+            <div className="flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
               <input
                 {...form.register("email")}
                 type="email"
@@ -110,9 +90,9 @@ export default function LoginPage() {
           </div>
 
           {/* Password */}
-          <div className="flex flex-col gap-[2px]">
+          <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Password</label>
-            <div className="relative flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-brand-500 transition-colors">
+            <div className="relative flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
               <input
                 {...form.register("password")}
                 type={showPassword ? "text" : "password"}
@@ -133,27 +113,26 @@ export default function LoginPage() {
           </div>
 
           {/* Button & Links */}
-          <div className="flex flex-col gap-[16px] w-[398px]">
+          <div className="flex flex-col gap-[16px] w-full">
             <button 
               type="submit"
               disabled={isLoading}
-              className="flex justify-center items-center w-full h-[48px] p-[8px] gap-[8px] bg-[#6936F2] hover:bg-[#522BC8] disabled:opacity-50 disabled:cursor-not-allowed rounded-[100px] text-[16px] font-bold text-[#FDFDFD] leading-[30px] tracking-[-0.02em] font-['SF_Pro'] transition-colors cursor-pointer"
+              className="flex justify-center items-center w-full h-[44px] md:h-[48px] p-[8px] gap-[8px] bg-[#6936F2] hover:bg-[#522BC8] disabled:opacity-50 disabled:cursor-not-allowed rounded-[100px] text-[16px] font-bold text-[#FDFDFD] leading-[30px] tracking-[-0.02em] font-['SF_Pro'] transition-all hover:shadow-[0_0_17px_rgba(105,54,242,0.6)] cursor-pointer"
             >
               {isLoading ? 'Logging in...' : 'Login'}
             </button>
 
-            <div className="flex justify-center items-center gap-[4px] h-[30px]">
-              <span className="text-[16px] font-semibold text-[#FDFDFD] leading-[30px] tracking-[-0.02em] font-['SF_Pro']">
+            <div className="flex justify-center items-center gap-[4px] h-[28px] md:h-[30px]">
+              <span className="text-[14px] md:text-[16px] font-semibold text-[#FDFDFD] leading-[28px] md:leading-[30px] tracking-[-0.02em] font-['SF_Pro']">
                 Don&apos;t have an account?
               </span>
-              <Link href="/register" className="text-[16px] font-bold text-[#7F51F9] leading-[30px] tracking-[-0.02em] font-['SF_Pro'] hover:underline">
+              <Link href="/register" className="text-[14px] md:text-[16px] font-bold text-[#7F51F9] leading-[28px] md:leading-[30px] tracking-[-0.01em] md:tracking-[-0.02em] font-['SF_Pro'] hover:underline">
                 Register
               </Link>
             </div>
           </div>
           
         </form>
-
       </div>
     </div>
   );
