@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import axiosInstance from '@/lib/axios';
 import { PostCard, PostType } from '@/components/features/PostCard';
@@ -22,7 +22,7 @@ interface RawPost {
   likedByMe: boolean;
 }
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams();
   const currentSearchQuery = searchParams.get('search') || '';
 
@@ -33,7 +33,6 @@ export default function Home() {
     const fetchPosts = async () => {
       try {
         const response = await axiosInstance.get('/posts');
-        // Pake tipe data RawPost[] buat gantiin 'any'
         const rawPosts: RawPost[] = response.data.data.posts || [];
 
         const formattedPosts: PostType[] = rawPosts.map((item: RawPost) => ({
@@ -76,10 +75,10 @@ export default function Home() {
   }, [posts, currentSearchQuery]);
 
   return (
-    <div className="flex flex-col items-center w-full min-h-screen pt-4 md:pt-[120px] pb-20 px-4">
+    <div className="flex flex-col items-center w-full min-h-screen pt-4 md:pt-[120px] pb-20 px-4 bg-[#000000]">
       {isLoading ? (
         <div className="flex justify-center items-center h-40">
-          <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
+          <Loader2 className="w-8 h-8 text-[#7F51F9] animate-spin" />
         </div>
       ) : filteredPosts.length > 0 ? (
         <div className="flex flex-col gap-4 md:gap-[24px] w-full items-center">
@@ -92,8 +91,8 @@ export default function Home() {
           ))}
         </div>
       ) : (
-        <div className="text-center text-neutral-500 mt-20">
-          <h2 className="text-display-xs font-bold mb-2 text-neutral-25">
+        <div className="text-center text-[#A4A7AE] mt-20">
+          <h2 className="text-[24px] font-bold mb-2 text-[#FDFDFD]">
             Hasil tidak ditemukan
           </h2>
           <p>
@@ -102,5 +101,17 @@ export default function Home() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#000000] flex justify-center items-center">
+        <Loader2 className="w-8 h-8 text-[#7F51F9] animate-spin" />
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }
