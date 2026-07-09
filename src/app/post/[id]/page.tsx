@@ -18,10 +18,8 @@ export default function PostDetail() {
   useEffect(() => {
     const fetchPostDetail = async () => {
       try {
-        // Tembak API detail post Mas Henry
         const response = await axiosInstance.get(`/posts/${id}`);
         const item = response.data?.data?.post || response.data?.data;
-
         if (item) {
           const formattedPost: PostType = {
             id: item.id,
@@ -38,7 +36,7 @@ export default function PostDetail() {
               day: 'numeric', month: 'long', year: 'numeric'
             }),
             isLiked: item.likedByMe || false,
-            isSaved: item.savedByMe || true, // Default true karena kalau diakses dari tab Saved pasti udah tersimpan
+            isSaved: item.savedByMe || true, 
           };
           setPost(formattedPost);
         }
@@ -57,7 +55,6 @@ export default function PostDetail() {
 
   return (
     <div className="min-h-screen bg-[#000000] text-white font-['SF_Pro'] pb-[100px] md:pb-[40px]">
-      {/* Header Mobile dengan tombol Back */}
       <div className="sticky top-0 z-50 flex flex-row items-center px-[16px] h-[64px] bg-[#000000] border-b border-[#181D27] md:hidden">
         <button onClick={() => router.back()} className="p-1 cursor-pointer">
           <ArrowLeft className="w-[24px] h-[24px] text-[#FDFDFD]" />
@@ -68,8 +65,6 @@ export default function PostDetail() {
       </div>
 
       <div className="flex flex-col items-center w-full max-w-[812px] mx-auto pt-[16px] md:pt-[40px] px-[16px] md:px-0">
-        
-        {/* Tombol Back Desktop */}
         <div className="hidden md:flex w-full mb-[24px]">
           <button 
             onClick={() => router.back()} 
@@ -80,7 +75,6 @@ export default function PostDetail() {
           </button>
         </div>
 
-        {/* Loading State & Render PostCard */}
         {isLoading ? (
           <div className="flex justify-center items-center py-20 w-full">
             <Loader2 className="w-8 h-8 text-[#7F51F9] animate-spin" />
