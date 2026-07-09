@@ -275,7 +275,7 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-[2px] md:gap-[4px] w-full">
-              {currentContent.map((item, index) => (
+              {currentContent.map((item) => (
                 <Link 
                   href={`/post/${item.id}`} 
                   key={item.id} 
@@ -287,7 +287,6 @@ export default function ProfilePage() {
                     fill 
                     className="object-cover"
                     sizes="(max-width: 768px) 33vw, 268px"
-                    priority={index < 3} // FIX LCP: Prioritaskan 3 gambar baris pertama
                   />
                 </Link>
               ))}
