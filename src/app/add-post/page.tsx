@@ -7,17 +7,16 @@ import { ArrowLeft, UploadCloud, Loader2 } from 'lucide-react';
 import axiosInstance from '@/lib/axios';
 import { Toast } from '@/components/ui/Toast'; 
 
+
 export default function AddPostPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   // States buat Form
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   // States buat Custom Toast
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
@@ -34,14 +33,11 @@ export default function AddPostPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
-
-    // Validasi Ukuran (Max 5MB sesuai Swagger)
     if (selectedFile.size > 5 * 1024 * 1024) {
       setError('Ukuran file maksimal 5MB.');
       triggerToast('Ukuran file maksimal 5MB.', 'error');
       return;
     }
-
     // Validasi Tipe (JPG/PNG/WEBP)
     const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!validTypes.includes(selectedFile.type)) {
@@ -64,12 +60,9 @@ export default function AddPostPage() {
       handleFileChange(event);
     }
   };
-
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
-
-  // Handle Submit Form
   const handleSubmit = async () => {
     if (!file) {
       setError('Foto wajib diunggah!');
@@ -85,7 +78,6 @@ export default function AddPostPage() {
     if (caption.trim()) {
       formData.append('caption', caption.trim());
     }
-
     try {
       await axiosInstance.post('/posts', formData, {
         headers: {
@@ -99,7 +91,6 @@ export default function AddPostPage() {
         router.push('/');
         router.refresh();
       }, 1500);
-
     } catch (err) {
       console.error('Failed to create post:', err);
       setError('Gagal membuat postingan. Coba lagi.');
@@ -118,8 +109,7 @@ export default function AddPostPage() {
           onClose={() => setShowToast(false)} 
         />
       )}
-
-      {/* HEADER (Sama antara Desktop & Mobile) */}
+      {/* HEADER */}
       <div className="sticky top-0 z-50 flex flex-row items-center px-[16px] md:px-[120px] h-[64px] md:h-[80px] bg-[#000000] border-b border-[#181D27]">
         <div className="flex items-center w-full max-w-[452px] mx-auto relative justify-center md:justify-start">
           <button 
@@ -133,10 +123,8 @@ export default function AddPostPage() {
           </span>
         </div>
       </div>
-
       {/* MAIN CONTAINER */}
       <div className="flex flex-col items-center w-full max-w-[452px] mx-auto pt-[24px] px-[16px] md:px-0 gap-[16px]">
-        
         {/* PHOTO UPLOAD SECTION */}
         <div className="flex flex-col w-full gap-[2px]">
           <label className="text-[14px] font-bold text-[#FDFDFD] leading-[28px] tracking-[-0.02em]">
@@ -179,14 +167,13 @@ export default function AddPostPage() {
               </div>
             )}
           </div>
-          {/* Teks Error buat foto (Opsional) */}
+          {/* Teks Error buat foto */}
           {error && !file && (
             <span className="text-[14px] text-[#B41759] font-medium leading-[28px] tracking-[-0.03em]">
               {error}
             </span>
           )}
         </div>
-
         {/* CAPTION SECTION */}
         <div className="flex flex-col w-full gap-[2px]">
           <label className="text-[14px] font-bold text-[#FDFDFD] leading-[28px] tracking-[-0.02em]">

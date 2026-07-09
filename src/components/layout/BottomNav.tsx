@@ -19,19 +19,17 @@ export function BottomNav() {
     verifyAuth();
   }, [pathname]);
 
-  // Sembunyikan kalau: Belum login, di halaman form (add-post/edit-profile), atau di detail post
   const hiddenPages = ['/add-post', '/edit-profile', '/login', '/register'];
   const isFullScreenMode = pathname.startsWith('/post/') || hiddenPages.includes(pathname);
 
   if (!isLoggedIn || isFullScreenMode) return null;
 
-  // Cek menu mana yang lagi aktif biar warnanya ungu
+  // Cek menu mana yang lagi aktif 
   const isHomeActive = pathname === '/';
   const isProfileActive = pathname === '/profile';
 
   return (
     <div className="fixed bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 z-50 flex flex-row justify-center items-center p-0 gap-[45px] w-[345px] md:w-[360px] h-[64px] md:h-[80px] bg-[rgba(10,13,18,0.8)] border border-[#181D27] rounded-[1000px] shadow-2xl backdrop-blur-[50px]">
-      
       {/* 1. Home Menu */}
       <Link href="/" className="flex flex-col justify-center items-center gap-[2px] md:gap-[4px] w-[94px] h-[46px] md:h-[58px] group">
         <Home className={`w-[20px] h-[20px] md:w-[24px] md:h-[24px] group-hover:opacity-80 transition-all ${isHomeActive ? 'text-[#7F51F9]' : 'text-[#FDFDFD]'}`} />
@@ -55,7 +53,6 @@ export function BottomNav() {
           Profile
         </span>
       </Link>
-
     </div>
   );
 }

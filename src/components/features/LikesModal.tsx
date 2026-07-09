@@ -28,12 +28,10 @@ export default function LikesModal({
 }: LikesModalProps) {
   const [prevUsers, setPrevUsers] = useState<LikedUser[]>(users);
   const [localUsers, setLocalUsers] = useState<LikedUser[]>(users);
-  // Deriving state selama proses render untuk menghindari ESLint rules soal useEffect
   if (users !== prevUsers) {
     setPrevUsers(users);
     setLocalUsers(users);
   }
-
   if (!isOpen) return null;
 
   const handleFollowToggle = async (
@@ -60,7 +58,6 @@ export default function LikesModal({
       }
     } catch (err) {
       console.error("Follow/Unfollow error:", err);
-
       // 3. Rollback UI kalau API gagal
       setLocalUsers((prev) =>
         prev.map((u) =>

@@ -286,7 +286,6 @@ export default function CommentsModal({
             )}
 
             <div className="flex flex-col px-[16px] pt-[16px] pb-[32px] md:p-[20px] gap-[16px] border-t border-[#181D27] shrink-0 bg-[#0A0D12]">
-              
               <div className="hidden md:flex flex-row justify-between items-center h-[30px] w-full">
                 <div className="flex flex-row items-center gap-[16px]">
                   <button onClick={onLikeToggle} className="flex items-center gap-[6px] hover:opacity-80 transition-opacity cursor-pointer">
@@ -299,7 +298,7 @@ export default function CommentsModal({
                       {localCommentsCount + comments.length}
                     </span>
                   </button>
-                  {/* Tombol Share sekarang udah pakai onShare */}
+                  {/* Tombol Share */}
                   <button onClick={onShare} className="flex items-center gap-[6px] hover:opacity-80 transition-opacity cursor-pointer">
                     <Send className="w-[24px] h-[24px] text-[#FDFDFD]" />
                     <span className="text-[16px] font-semibold text-[#FDFDFD] leading-[30px] tracking-[-0.02em] font-['SF_Pro']">{post.sharesCount}</span>

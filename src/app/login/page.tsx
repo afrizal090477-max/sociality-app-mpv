@@ -11,6 +11,7 @@ import axiosInstance from '@/lib/axios';
 import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
 
+
 const loginSchema = z.object({
   email: z.string().email("Email tidak valid"),
   password: z.string().min(6, "Password minimal 6 karakter"),
@@ -21,7 +22,6 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   });
@@ -33,7 +33,6 @@ export default function LoginPage() {
         email: data.email,
         password: data.password,
       });
-
       localStorage.setItem('token', response.data.data.token);
       toast.success("Welcome Back! Login Berhasil.");
       window.location.assign('/');
@@ -60,8 +59,6 @@ export default function LoginPage() {
       }}
     >
       <div className="z-10 flex flex-col items-center w-[345px] md:w-[446px] p-[32px_16px] md:p-[40px_24px] gap-[16px] md:gap-[24px] bg-[rgba(10,13,18,0.2)] border border-[#181D27] rounded-[16px] backdrop-blur-[20px] shadow-2xl">
-        
-        {/* Logo & Title */}
         <div className="flex flex-col items-center gap-[16px] w-full">
           <div className="flex items-center gap-[11px]">
             <Image src="/assets/Logo.svg" alt="Sociality Logo" width={30} height={30} />
@@ -70,10 +67,7 @@ export default function LoginPage() {
           <h2 className="text-[20px] md:text-[24px] font-bold text-[#FDFDFD] leading-[34px] md:leading-[36px] font-['SF_Pro'] text-center">Welcome Back!</h2>
         </div>
 
-        {/* Form */}
         <form onSubmit={form.handleSubmit(onSubmit)} className="w-[313px] md:w-[398px] flex flex-col gap-[20px]">
-          
-          {/* Email */}
           <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Email</label>
             <div className="flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
@@ -89,7 +83,6 @@ export default function LoginPage() {
             )}
           </div>
 
-          {/* Password */}
           <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Password</label>
             <div className="relative flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
@@ -112,7 +105,6 @@ export default function LoginPage() {
             )}
           </div>
 
-          {/* Button & Links */}
           <div className="flex flex-col gap-[16px] w-full">
             <button 
               type="submit"

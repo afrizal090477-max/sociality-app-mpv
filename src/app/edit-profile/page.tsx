@@ -7,21 +7,19 @@ import { ArrowLeft, Loader2, User } from 'lucide-react';
 import axiosInstance from '@/lib/axios';
 import { Toast } from '@/components/ui/Toast'; 
 
+
 export default function EditProfilePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   // Loading States
   const [isLoadingInitial, setIsLoadingInitial] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   // Form States
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState(''); // Email dibiarin read-only
   const [phone, setPhone] = useState('');
   const [bio, setBio] = useState('');
-
   // Form Errors
   const [errors, setErrors] = useState({
     name: '',
@@ -29,23 +27,19 @@ export default function EditProfilePage() {
     bio: '',
     avatar: '',
   });
-
   // Avatar States
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
-
   // Toast States
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
-
   const triggerToast = (message: string, type: 'success' | 'error' = 'error') => {
     setToastMsg(message);
     setToastType(type);
     setShowToast(true);
   };
-
-  // 1. Fetch Data Profil Saat Ini
+  // 1. Fetch Data Profil 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -66,7 +60,6 @@ export default function EditProfilePage() {
         setIsLoadingInitial(false);
       }
     };
-
     fetchProfile();
   }, []);
 
@@ -74,7 +67,6 @@ export default function EditProfilePage() {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (file.size > 5 * 1024 * 1024) {
       setErrors((prev) => ({ ...prev, avatar: 'Ukuran foto maksimal 5MB.' }));
       triggerToast('Ukuran foto maksimal 5MB.', 'error');
@@ -87,7 +79,6 @@ export default function EditProfilePage() {
       triggerToast('Format foto tidak didukung.', 'error');
       return;
     }
-
     setErrors((prev) => ({ ...prev, avatar: '' }));
     setAvatarFile(file);
     setPreviewAvatar(URL.createObjectURL(file));
@@ -97,10 +88,8 @@ export default function EditProfilePage() {
   const handleSubmit = async () => {
     // Reset errors
     setErrors({ name: '', username: '', bio: '', avatar: '' });
-    
     let hasError = false;
     const newErrors = { name: '', username: '', bio: '', avatar: '' };
-
     if (!name.trim()) {
       newErrors.name = 'Name is required';
       hasError = true;
@@ -109,7 +98,6 @@ export default function EditProfilePage() {
       newErrors.username = 'Username is required';
       hasError = true;
     }
-
     if (hasError) {
       setErrors(newErrors);
       triggerToast('Mohon lengkapi data yang wajib!', 'error');
@@ -118,31 +106,24 @@ export default function EditProfilePage() {
 
     setIsSubmitting(true);
     const formData = new FormData();
-    
     formData.append('name', name.trim());
     formData.append('username', username.trim());
     if (phone.trim()) formData.append('phone', phone.trim());
     if (bio.trim()) formData.append('bio', bio.trim());
-
     if (avatarFile) {
       formData.append('avatar', avatarFile);
     }
-
     try {
       await axiosInstance.patch('/me', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-
       triggerToast('Profile Success Update!', 'success');
-      
       if (avatarFile && previewAvatar) URL.revokeObjectURL(previewAvatar);
-
       // Pindah ke halaman profil setelah 1.5 detik
       setTimeout(() => {
         router.push('/profile');
         router.refresh();
       }, 1500);
-
     } catch (error) {
       console.error('Failed to update profile:', error);
       triggerToast('Gagal memperbarui profil.', 'error');
@@ -152,7 +133,6 @@ export default function EditProfilePage() {
       setIsSubmitting(false);
     }
   };
-
   if (isLoadingInitial) {
     return (
       <div className="min-h-screen bg-black flex justify-center items-center">
@@ -160,6 +140,7 @@ export default function EditProfilePage() {
       </div>
     );
   }
+
 
   return (
     <div className="min-h-screen bg-[#000000] text-white font-['SF_Pro'] relative pb-[100px] md:pb-0">
@@ -170,7 +151,6 @@ export default function EditProfilePage() {
           onClose={() => setShowToast(false)} 
         />
       )}
-
       {/* HEADER */}
       <div className="sticky top-0 z-50 flex flex-row items-center px-[16px] md:px-[120px] h-[64px] md:h-[80px] bg-[#000000] border-b border-[#181D27]">
         <div className="flex items-center w-full max-w-[800px] mx-auto relative justify-center md:justify-start">
@@ -185,10 +165,8 @@ export default function EditProfilePage() {
           </span>
         </div>
       </div>
-
       {/* MAIN CONTAINER */}
-      <div className="flex flex-col md:flex-row items-center md:items-start justify-center w-full max-w-[800px] mx-auto pt-[24px] md:pt-[48px] px-[16px] md:px-0 gap-[32px] md:gap-[48px]">
-        
+      <div className="flex flex-col md:flex-row items-center md:items-start justify-center w-full max-w-[800px] mx-auto pt-[24px] md:pt-[48px] px-[16px] md:px-0 gap-[32px] md:gap-[48px]"> 
         {/* AVATAR SECTION */}
         <div className="flex flex-col items-center gap-[16px] shrink-0">
           <div className={`relative flex items-center justify-center w-[80px] h-[80px] md:w-[130px] md:h-[130px] rounded-full bg-neutral-900 border overflow-hidden ${errors.avatar ? 'border-[#B41759]' : 'border-[#181D27]'}`}>
@@ -217,10 +195,8 @@ export default function EditProfilePage() {
             {errors.avatar && <span className="text-[12px] text-[#B41759] font-medium mt-1">{errors.avatar}</span>}
           </div>
         </div>
-
         {/* FORM SECTION */}
-        <div className="flex flex-col w-full max-w-[592px] gap-[24px]">
-          
+        <div className="flex flex-col w-full max-w-[592px] gap-[24px]"> 
           {/* Name */}
           <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FDFDFD] leading-[28px] tracking-[-0.02em]">Name</label>

@@ -26,19 +26,16 @@ interface PostItem {
   imageUrl: string;
 }
 
-// Tipe params diubah jadi Promise karena standar Next.js 15
+
 export default function FriendProfilePage({ params }: { params: Promise<{ username: string }> }) {
   //  Unwrap/bongkar params pakai use() di sini!
   const { username } = use(params);
-  
   const router = useRouter();
-  
   // States
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [likedPosts, setLikedPosts] = useState<PostItem[]>([]);
   const [activeTab, setActiveTab] = useState<'gallery' | 'liked'>('gallery');
-  
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isLoadingContent, setIsLoadingContent] = useState(true);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
@@ -99,10 +96,8 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
       } finally {
         setIsLoadingProfile(false);
       }
-
       fetchGallery();
     };
-
     loadInitialData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username, router]);
@@ -110,7 +105,6 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
   const handleTabChange = (tab: 'gallery' | 'liked') => {
     if (tab === activeTab) return; 
     setActiveTab(tab); 
-    
     if (tab === 'gallery') {
       fetchGallery();
     } else {
@@ -123,14 +117,12 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
     if (!profile) return;
     const previousState = profile.isFollowing;
     setIsFollowLoading(true);
-    
     // Optimistic Update UI
     setProfile({ 
       ...profile, 
       isFollowing: !previousState, 
       followersCount: previousState ? profile.followersCount - 1 : profile.followersCount + 1 
     });
-
     try {
       if (previousState) {
         await axiosInstance.delete(`/follow/${profile.username}`);
@@ -161,7 +153,6 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
       console.error(err);
     }
   };
-
   if (isLoadingProfile) {
     return (
       <div className="min-h-screen bg-[#000000] flex justify-center items-center">
@@ -169,14 +160,11 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
       </div>
     );
   }
-
   if (!profile) return null;
-
   const currentContent = activeTab === 'gallery' ? posts : likedPosts;
 
   return (
     <div className="min-h-screen bg-[#000000] text-white font-['SF_Pro'] relative pb-[100px] md:pb-0">
-      
       {/* MOBILE HEADER */}
       <div className="md:hidden sticky top-0 z-50 flex flex-row items-center px-[16px] h-[64px] bg-[#000000] border-b border-[#181D27]">
         <button onClick={() => router.back()} className="p-1 cursor-pointer">
@@ -189,8 +177,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
 
       {/* MAIN CONTAINER */}
       <div className="flex flex-col items-center w-full max-w-[812px] mx-auto pt-[16px] md:pt-[40px] px-[16px] md:px-0 gap-[24px] md:gap-[40px]">
-        
-        {/* --- PROFILE HEADER SECTION --- */}
+        {/* PROFILE HEADER SECTION */}
         <div className="flex flex-col w-full gap-[24px]">
           
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center w-full gap-[16px] md:gap-0">
@@ -221,7 +208,6 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
 
             {/* ACTIONS: Follow & Share */}
             <div className="flex flex-row items-center gap-[12px] w-full md:w-auto">
-              
               <button 
                 onClick={handleFollowToggle}
                 disabled={isFollowLoading}
@@ -274,10 +260,9 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
               <span className="text-[12px] md:text-[16px] font-normal text-[#A4A7AE] leading-[16px] md:leading-[30px]">Following</span>
             </div>
           </div>
-
         </div>
 
-        {/* --- TABS SECTION --- */}
+        {/* TABS SECTION */}
         <div className="flex flex-col w-full gap-[24px]">
           
           <div className="flex flex-row items-center w-full">
@@ -297,7 +282,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
             </button>
           </div>
 
-          {/* --- CONTENT GRID SECTION --- */}
+          {/* CONTENT GRID SECTION */}
           {isLoadingContent ? (
             <div className="flex justify-center items-center py-20 w-full">
               <Loader2 className="w-8 h-8 text-[#7F51F9] animate-spin" />

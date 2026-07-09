@@ -7,6 +7,7 @@ import axiosInstance from '@/lib/axios';
 import { toast } from 'sonner';
 import { PostCard, PostType } from '@/components/features/PostCard';
 
+
 export default function PostDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [post, setPost] = useState<PostType | null>(null);
@@ -18,7 +19,6 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
         const res = await axiosInstance.get(`/posts/${params.id}`);
         // Asumsi struktur response dari GET /posts/{id} mirip dengan GET /feed
         const postData = res.data?.data?.post || res.data?.data || res.data;
-        
         // Mapping data dari API biar klop sama interface PostType di PostCard.tsx
         const mappedPost: PostType = {
           id: postData.id,
@@ -34,8 +34,7 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
           createdAt: postData.createdAt,
           isLiked: postData.likedByMe || false,
           isSaved: postData.isSaved || false, // Asumsi ada field isSaved dari API
-        };
-        
+        }; 
         setPost(mappedPost);
       } catch (error) {
         console.error('Failed to fetch post details:', error);
@@ -44,10 +43,8 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
         setIsLoading(false);
       }
     };
-
     fetchPostDetail();
   }, [params.id]);
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#000000] flex justify-center items-center">
@@ -55,7 +52,6 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
       </div>
     );
   }
-
   if (!post) {
     return (
       <div className="min-h-screen bg-[#000000] text-[#FDFDFD] font-['SF_Pro'] flex flex-col justify-center items-center gap-4">
@@ -69,7 +65,6 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen bg-[#000000] text-white font-['SF_Pro'] pb-[100px] md:pb-0">
-      
       {/* HEADER TAMPILAN FULL SCREEN */}
       <div className="sticky top-0 z-50 flex flex-row items-center px-[16px] md:px-[120px] h-[64px] md:h-[80px] bg-[#000000] border-b border-[#181D27]">
         <div className="flex items-center w-full max-w-[600px] mx-auto relative justify-center md:justify-start">

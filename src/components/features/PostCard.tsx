@@ -39,22 +39,18 @@ interface ApiLikedUser {
 
 export function PostCard({ post, priority = false }: PostCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  
   const [isLiked, setIsLiked] = useState(post.isLiked);
   const [likesCount, setLikesCount] = useState(post.likesCount);
   const [isSaved, setIsSaved] = useState(post.isSaved);
-
   const [isLikesModalOpen, setIsLikesModalOpen] = useState(false);
   const [likedUsers, setLikedUsers] = useState<LikedUser[]>([]);
   const [isLoadingLikes, setIsLoadingLikes] = useState(false);
-
   const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
 
   const handleLikeToggle = async () => {
     const newLikedState = !isLiked;
     setIsLiked(newLikedState);
     setLikesCount((prev) => newLikedState ? prev + 1 : prev - 1);
-
     try {
       if (newLikedState) {
         await axiosInstance.post(`/posts/${post.id}/like`);
@@ -72,7 +68,6 @@ export function PostCard({ post, priority = false }: PostCardProps) {
   const handleSaveToggle = async () => {
     const newSavedState = !isSaved;
     setIsSaved(newSavedState); 
-
     try {
       if (newSavedState) {
         await axiosInstance.post(`/posts/${post.id}/save`);
@@ -90,7 +85,6 @@ export function PostCard({ post, priority = false }: PostCardProps) {
 
   // Fungsi Share Native & Clipboard
   const handleShare = async () => {
-    // Asumsi URL detail postingan nantinya ada di /post/{id}
     const shareUrl = `${window.location.origin}/post/${post.id}`;
     const shareData = {
       title: 'Sociality Post',
@@ -114,13 +108,11 @@ export function PostCard({ post, priority = false }: PostCardProps) {
  const openLikesModal = async () => {
     setIsLikesModalOpen(true);
     setIsLoadingLikes(true);
-    
     try {
       const [likesRes, followingRes] = await Promise.all([
         axiosInstance.get(`/posts/${post.id}/likes`),
         axiosInstance.get(`/me/following`)
       ]);
-
       let usersData: ApiLikedUser[] = [];
       const rawLikes = likesRes.data;
       
@@ -135,7 +127,6 @@ export function PostCard({ post, priority = false }: PostCardProps) {
       } else if (Array.isArray(rawLikes?.users)) {
         usersData = rawLikes.users;
       }
-
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let myFollowingData: any[] = [];
       const rawFollowing = followingRes.data;
@@ -151,7 +142,6 @@ export function PostCard({ post, priority = false }: PostCardProps) {
       }
 
       const myFollowingUsernames = myFollowingData.map(u => u.username);
-
       const mappedUsers: LikedUser[] = usersData.map((user) => ({
         id: user.id,
         name: user.name || user.username,
@@ -271,7 +261,7 @@ export function PostCard({ post, priority = false }: PostCardProps) {
         localCommentsCount={post.commentsCount}
         onLikeToggle={handleLikeToggle}
         onSaveToggle={handleSaveToggle}
-        onShare={handleShare} // fungsi share ke dalam modal
+        onShare={handleShare} 
       />
     </>
   );

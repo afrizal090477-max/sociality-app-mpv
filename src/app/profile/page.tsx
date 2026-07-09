@@ -27,7 +27,6 @@ interface PostItem {
 
 export default function ProfilePage() {
   const router = useRouter();
-  
   // States
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<PostItem[]>([]);
@@ -35,8 +34,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<'gallery' | 'saved'>('gallery');
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isLoadingContent, setIsLoadingContent] = useState(true);
-
-  // Fetch Gallery (Pake Parameter & Anti-Cache)
+  // Fetch Gallery 
   const fetchGallery = async () => {
     setIsLoadingContent(true);
     try {
@@ -91,17 +89,14 @@ export default function ProfilePage() {
       } finally {
         setIsLoadingProfile(false);
       }
-
       fetchGallery();
     };
-
     loadInitialData();
   }, []);
 
   const handleTabChange = (tab: 'gallery' | 'saved') => {
     if (tab === activeTab) return; 
-    setActiveTab(tab); 
-    
+    setActiveTab(tab);  
     if (tab === 'gallery') {
       fetchGallery();
     } else {
@@ -111,8 +106,7 @@ export default function ProfilePage() {
 
   const handleShareProfile = async () => {
     if (!profile) return;
-    const shareUrl = `${window.location.origin}/profile/${profile.username}`;
-    
+    const shareUrl = `${window.location.origin}/profile/${profile.username}`; 
     try {
       if (navigator.share) {
         await navigator.share({
@@ -127,7 +121,6 @@ export default function ProfilePage() {
       console.error(err);
     }
   };
-
   if (isLoadingProfile) {
     return (
       <div className="min-h-screen bg-[#000000] flex justify-center items-center">
@@ -135,7 +128,6 @@ export default function ProfilePage() {
       </div>
     );
   }
-
   if (!profile) {
     return (
       <div className="min-h-screen bg-[#000000] flex justify-center items-center text-white">
@@ -143,12 +135,11 @@ export default function ProfilePage() {
       </div>
     );
   }
-
   const currentContent = activeTab === 'gallery' ? posts : savedPosts;
+
 
   return (
     <div className="min-h-screen bg-[#000000] text-white font-['SF_Pro'] relative pb-[100px] md:pb-0">
-      
       {/* MOBILE HEADER */}
       <div className="md:hidden sticky top-0 z-50 flex flex-row items-center px-[16px] h-[64px] bg-[#000000] border-b border-[#181D27]">
         <button onClick={() => router.back()} className="p-1 cursor-pointer">
@@ -161,7 +152,6 @@ export default function ProfilePage() {
 
       {/* MAIN CONTAINER */}
       <div className="flex flex-col items-center w-full max-w-[812px] mx-auto pt-[16px] md:pt-[40px] px-[16px] md:px-0 gap-[24px] md:gap-[40px]">
-        
         {/* --- PROFILE HEADER SECTION --- */}
         <div className="flex flex-col w-full gap-[24px]">
           
@@ -233,7 +223,6 @@ export default function ProfilePage() {
               <span className="text-[12px] md:text-[16px] font-normal text-[#A4A7AE] leading-[16px] md:leading-[30px]">Following</span>
             </div>
           </div>
-
         </div>
 
         {/* --- TABS SECTION --- */}

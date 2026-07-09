@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
-import { BottomNav } from "@/components/layout/BottomNav"; // 👈 Tambahkan import ini
+import { BottomNav } from "@/components/layout/BottomNav"; 
 import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -23,12 +23,10 @@ export default function RootLayout({
         <Toaster richColors position="top-center" />
         <Navbar />
         
-        {/* Main Content */}
         <main>
           {children}
         </main>
 
-        {/* 👈 TAMBAHKAN BOTTOM NAV DI SINI */}
         <BottomNav />
         
       </body>
