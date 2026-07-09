@@ -38,7 +38,6 @@ export default function LikesModal({
     username: string,
     currentIsFollowing: boolean,
   ) => {
-    // 1. Optimistic Update (UI Langsung Berubah)
     setLocalUsers((prev) =>
       prev.map((u) =>
         u.username === username
@@ -48,7 +47,6 @@ export default function LikesModal({
     );
 
     try {
-      // 2. Tembak API Asli berdasarkan username
       if (currentIsFollowing) {
         await axiosInstance.delete(`/follow/${username}`);
         toast.success(`Berhenti mengikuti @${username}`);
@@ -58,7 +56,6 @@ export default function LikesModal({
       }
     } catch (err) {
       console.error("Follow/Unfollow error:", err);
-      // 3. Rollback UI kalau API gagal
       setLocalUsers((prev) =>
         prev.map((u) =>
           u.username === username
@@ -76,9 +73,7 @@ export default function LikesModal({
 
   return (
     <div className="fixed inset-0 z-[999] flex items-end md:items-center justify-center bg-[rgba(10,13,18,0.8)] backdrop-blur-sm sm:p-4">
-      {/* Container: Bottom Sheet (Mobile) & Modal (Desktop) */}
       <div className="w-full md:w-[548px] bg-[#0A0D12] border-t md:border border-[#181D27] rounded-t-[16px] md:rounded-[16px] p-[16px_16px_32px] md:p-[20px] flex flex-col gap-[12px] md:gap-[20px] animate-in slide-in-from-bottom-full md:slide-in-from-bottom-0 md:zoom-in-95 duration-200">
-        {/* Header */}
         <div className="flex justify-between items-center">
           <h2 className="text-[16px] md:text-[20px] font-bold text-[#FDFDFD] leading-[30px] md:leading-[34px] tracking-[-0.02em] font-['SF_Pro']">
             Likes
@@ -91,7 +86,6 @@ export default function LikesModal({
           </button>
         </div>
 
-        {/* List Content */}
         <div className="flex flex-col gap-[20px] max-h-[50vh] md:max-h-[400px] overflow-y-auto pr-2">
           {isLoading ? (
             <div className="flex justify-center items-center py-10">
@@ -107,7 +101,6 @@ export default function LikesModal({
                 key={user.id}
                 className="flex items-center justify-between w-full h-[56px]"
               >
-                {/* User Info Group */}
                 <div className="flex items-center gap-[8px] flex-1">
                   <div className="w-[48px] h-[48px] rounded-full bg-neutral-800 overflow-hidden relative shrink-0">
                     {user.avatarUrl ? (
@@ -134,7 +127,6 @@ export default function LikesModal({
                   </div>
                 </div>
 
-                {/* Follow Button */}
                 <button
                   onClick={() =>
                     handleFollowToggle(user.username, user.isFollowing)

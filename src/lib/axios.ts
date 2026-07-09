@@ -24,14 +24,12 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Tangkap error secara global, misalnya token expired (401)
 axiosInstance.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Kalau kena 401 (Unauthorized), otomatis hapus token dan kembali ke login
       if (typeof window !== 'undefined') {
         console.error('Session expired. Redirecting to login...');
         localStorage.removeItem('token');

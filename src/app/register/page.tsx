@@ -12,6 +12,7 @@ import axiosInstance from '@/lib/axios';
 import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
 
+
 const registerSchema = z.object({
   name: z.string().min(2, "Nama terlalu pendek"),
   username: z.string().min(3, "Username minimal 3 karakter"),
@@ -61,6 +62,7 @@ export default function RegisterPage() {
     }
   };
 
+
   return (
     <div 
       className="relative flex min-h-screen w-full items-center justify-center py-[40px] px-6"
@@ -71,10 +73,7 @@ export default function RegisterPage() {
         backgroundRepeat: "no-repeat"
       }}
     >
-      
       <div className="z-10 flex flex-col items-center w-[345px] md:w-[523px] p-[32px_16px] md:p-[40px_24px] gap-[16px] md:gap-[24px] bg-[rgba(10,13,18,0.2)] border border-[#181D27] rounded-[16px] backdrop-blur-[50px] shadow-2xl">
-        
-        {/* Logo & Title */}
         <div className="flex flex-col items-center gap-[16px] w-full">
           <div className="flex items-center gap-[11px]">
             <Image src="/assets/Logo.svg" alt="Sociality Logo" width={30} height={30} />
@@ -83,10 +82,7 @@ export default function RegisterPage() {
           <h2 className="text-[24px] font-bold text-[#FDFDFD] leading-[36px] font-['SF_Pro'] text-center">Register</h2>
         </div>
 
-        {/* Form */}
         <form onSubmit={form.handleSubmit(onSubmit)} className="w-[313px] md:w-[475px] flex flex-col gap-[16px] md:gap-[20px]">
-          
-          {/* Name */}
           <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Name</label>
             <div className="flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
@@ -99,7 +95,6 @@ export default function RegisterPage() {
             {form.formState.errors.name && <span className="text-sm text-red-500">{form.formState.errors.name.message}</span>}
           </div>
 
-          {/* Username */}
           <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Username</label>
             <div className="flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
@@ -112,7 +107,6 @@ export default function RegisterPage() {
             {form.formState.errors.username && <span className="text-sm text-red-500">{form.formState.errors.username.message}</span>}
           </div>
 
-          {/* Number Phone */}
           <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Number Phone</label>
             <div className="flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
@@ -126,7 +120,6 @@ export default function RegisterPage() {
             {form.formState.errors.phone && <span className="text-sm text-red-500">{form.formState.errors.phone.message}</span>}
           </div>
 
-          {/* Email */}
           <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Email</label>
             <div className="flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
@@ -140,7 +133,6 @@ export default function RegisterPage() {
             {form.formState.errors.email && <span className="text-sm text-red-500">{form.formState.errors.email.message}</span>}
           </div>
 
-          {/* Password */}
           <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Password</label>
             <div className="relative flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
@@ -161,7 +153,6 @@ export default function RegisterPage() {
             {form.formState.errors.password && <span className="text-sm text-red-500">{form.formState.errors.password.message}</span>}
           </div>
 
-          {/* Confirm Password */}
           <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Confirm Password</label>
             <div className="relative flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
@@ -182,7 +173,6 @@ export default function RegisterPage() {
             {form.formState.errors.confirmPassword && <span className="text-sm text-red-500">{form.formState.errors.confirmPassword.message}</span>}
           </div>
 
-          {/* Button & Links */}
           <div className="flex flex-col gap-[16px] w-full mt-2">
             <button 
               type="submit"

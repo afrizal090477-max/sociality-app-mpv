@@ -35,13 +35,13 @@ interface SearchUser {
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  // State User & Menu
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
-  // State Live Search
+
   const [isMobileSearchActive, setIsMobileSearchActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -60,7 +60,10 @@ export default function Navbar() {
           return;
         }
         const response = await axiosInstance.get(`/me?t=${Date.now()}`);
-        const userData = response.data?.data?.profile || response.data?.data?.user || response.data?.data;
+        const userData =
+          response.data?.data?.profile ||
+          response.data?.data?.user ||
+          response.data?.data;
         setUser(userData);
         setIsLoggedIn(true);
       } catch (error) {
@@ -71,13 +74,13 @@ export default function Navbar() {
         setIsLoading(false);
       }
     };
-    
     fetchUserProfile();
 
     const handleProfileUpdate = () => fetchUserProfile();
     window.addEventListener("profileUpdated", handleProfileUpdate);
 
-    return () => window.removeEventListener("profileUpdated", handleProfileUpdate);
+    return () =>
+      window.removeEventListener("profileUpdated", handleProfileUpdate);
   }, [pathname]);
 
   useEffect(() => {
@@ -139,7 +142,6 @@ export default function Navbar() {
       isMounted = false;
     };
   }, [debouncedQuery]);
-
   const handleLogout = () => {
     localStorage.removeItem("token");
     setIsLoggedIn(false);
@@ -160,16 +162,22 @@ export default function Navbar() {
   const renderSearchResults = (isMobile: boolean = false) => {
     if (isSearching) {
       return (
-        <div className={`flex flex-col justify-center items-center gap-[4px] ${isMobile ? "h-[155px] mt-[100px]" : "h-[155px]"}`}>
+        <div
+          className={`flex flex-col justify-center items-center gap-[4px] ${isMobile ? "h-[155px] mt-[100px]" : "h-[155px]"}`}
+        >
           <Loader2 className="w-8 h-8 text-[#7F51F9] animate-spin" />
-          <span className="text-[16px] font-bold text-[#FDFDFD] font-['SF_Pro']">Mencari...</span>
+          <span className="text-[16px] font-bold text-[#FDFDFD] font-['SF_Pro']">
+            Mencari...
+          </span>
         </div>
       );
     }
 
     if (searchResults.length > 0) {
       return (
-        <div className={`flex flex-col ${isMobile ? "gap-[16px] w-full max-w-[361px] mx-auto pt-[16px]" : "gap-[16px]"}`}>
+        <div
+          className={`flex flex-col ${isMobile ? "gap-[16px] w-full max-w-[361px] mx-auto pt-[16px]" : "gap-[16px]"}`}
+        >
           {searchResults.map((resultUser) => (
             <Link
               href={`/profile/${resultUser.username}`}
@@ -183,16 +191,28 @@ export default function Navbar() {
             >
               <div className="w-[48px] h-[48px] rounded-full bg-neutral-800 overflow-hidden relative shrink-0">
                 {resultUser.avatarUrl ? (
-                  <Image src={resultUser.avatarUrl} alt={resultUser.name} fill sizes="48px" className="object-cover" />
+                  <Image
+                    src={resultUser.avatarUrl}
+                    alt={resultUser.name}
+                    fill
+                    sizes="48px"
+                    className="object-cover"
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[#A4A7AE] font-bold text-[14px]">
-                    {(resultUser.name || resultUser.username).charAt(0).toUpperCase()}
+                    {(resultUser.name || resultUser.username)
+                      .charAt(0)
+                      .toUpperCase()}
                   </div>
                 )}
               </div>
               <div className="flex flex-col justify-center items-start flex-1 w-[305px]">
-                <span className="w-full text-[14px] font-bold text-[#FDFDFD] leading-[28px] tracking-[-0.01em] font-['SF_Pro'] line-clamp-1">{resultUser.name}</span>
-                <span className="w-full text-[14px] font-normal text-[#A4A7AE] leading-[28px] tracking-[-0.02em] font-['SF_Pro'] line-clamp-1">@{resultUser.username}</span>
+                <span className="w-full text-[14px] font-bold text-[#FDFDFD] leading-[28px] tracking-[-0.01em] font-['SF_Pro'] line-clamp-1">
+                  {resultUser.name}
+                </span>
+                <span className="w-full text-[14px] font-normal text-[#A4A7AE] leading-[28px] tracking-[-0.02em] font-['SF_Pro'] line-clamp-1">
+                  @{resultUser.username}
+                </span>
               </div>
             </Link>
           ))}
@@ -201,20 +221,25 @@ export default function Navbar() {
     }
 
     return (
-      <div className={`flex flex-col justify-center items-center gap-[4px] ${isMobile ? "h-[155px] mt-[100px]" : "h-[155px]"}`}>
-        <h3 className="w-full text-[16px] font-bold text-[#FDFDFD] leading-[30px] tracking-[-0.02em] font-['SF_Pro'] text-center">No results found</h3>
-        <p className="w-full text-[14px] font-normal text-[#A4A7AE] leading-[28px] tracking-[-0.02em] font-['SF_Pro'] text-center">Change your keyword</p>
+      <div
+        className={`flex flex-col justify-center items-center gap-[4px] ${isMobile ? "h-[155px] mt-[100px]" : "h-[155px]"}`}
+      >
+        <h3 className="w-full text-[16px] font-bold text-[#FDFDFD] leading-[30px] tracking-[-0.02em] font-['SF_Pro'] text-center">
+          No results found
+        </h3>
+        <p className="w-full text-[14px] font-normal text-[#A4A7AE] leading-[28px] tracking-[-0.02em] font-['SF_Pro'] text-center">
+          Change your keyword
+        </p>
       </div>
     );
   };
-  const hiddenPages = ['/add-post', '/edit-profile'];
+  const hiddenPages = ["/add-post", "/edit-profile"];
   if (hiddenPages.includes(pathname)) {
-    return null; 
+    return null;
   }
 
   return (
     <>
-      {/* OVERLAY SEARCH MOBILE */}
       {isMobileSearchActive && (
         <div className="fixed inset-0 z-[100] bg-[#000000] flex flex-col md:hidden animate-in fade-in zoom-in-95">
           <div className="flex flex-row items-center px-[16px] gap-[16px] w-full h-[64px] border-b border-[#181D27] shrink-0">
@@ -229,12 +254,18 @@ export default function Navbar() {
                 className="flex-1 w-full bg-transparent border-none outline-none text-[14px] font-normal text-[#FDFDFD] leading-[28px] tracking-[-0.02em] font-['SF_Pro'] placeholder-[#717680]"
               />
               {searchQuery && (
-                <button onClick={() => handleSearchChange("")} className="shrink-0 cursor-pointer">
+                <button
+                  onClick={() => handleSearchChange("")}
+                  className="shrink-0 cursor-pointer"
+                >
                   <X className="w-[16px] h-[16px] text-[#A4A7AE] hover:text-[#FDFDFD]" />
                 </button>
               )}
             </div>
-            <button onClick={() => setIsMobileSearchActive(false)} className="shrink-0 cursor-pointer p-1">
+            <button
+              onClick={() => setIsMobileSearchActive(false)}
+              className="shrink-0 cursor-pointer p-1"
+            >
               <X className="w-[24px] h-[24px] text-[#FDFDFD]" />
             </button>
           </div>
@@ -244,15 +275,20 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* NAVBAR NORMAL (Top) */}
       <nav className="sticky top-0 z-50 w-full h-[64px] md:h-[80px] bg-[#000000] border-b border-[#181D27] flex items-center justify-between px-[16px] md:px-[120px]">
         <Link href="/" className="flex items-center gap-[11px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/Logo.svg" alt="Sociality Logo" width={30} height={30} />
-          <span className="text-[24px] font-bold text-[#FDFDFD] leading-[36px] font-['SF_Pro'] hidden md:block">Sociality</span>
+          <img
+            src="/assets/Logo.svg"
+            alt="Sociality Logo"
+            width={30}
+            height={30}
+          />
+          <span className="text-[24px] font-bold text-[#FDFDFD] leading-[36px] font-['SF_Pro'] hidden md:block">
+            Sociality
+          </span>
         </Link>
 
-        {/* SEARCH BAR (Desktop) */}
         <div className="hidden md:flex relative" ref={searchContainerRef}>
           <div className="flex flex-row items-center px-[16px] py-[8px] gap-[6px] w-[491px] h-[48px] bg-[#0A0D12] border border-[#181D27] rounded-[9999px]">
             <Search className="w-[20px] h-[20px] text-[#717680] shrink-0" />
@@ -261,11 +297,16 @@ export default function Navbar() {
               placeholder="Search user..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              onFocus={() => { if (searchQuery.trim()) setIsSearchDropdownOpen(true); }}
+              onFocus={() => {
+                if (searchQuery.trim()) setIsSearchDropdownOpen(true);
+              }}
               className="flex-1 bg-transparent border-none outline-none text-[14px] font-normal text-[#FDFDFD] leading-[28px] tracking-[-0.02em] font-['SF_Pro'] placeholder-[#717680]"
             />
             {searchQuery && (
-              <button onClick={() => handleSearchChange("")} className="shrink-0 cursor-pointer p-1">
+              <button
+                onClick={() => handleSearchChange("")}
+                className="shrink-0 cursor-pointer p-1"
+              >
                 <X className="w-[16px] h-[16px] text-[#A4A7AE] hover:text-[#FDFDFD]" />
               </button>
             )}
@@ -278,7 +319,6 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* RIGHT ACTIONS */}
         <div className="flex items-center">
           {isLoading ? (
             <div className="flex items-center gap-[13px] animate-pulse">
@@ -287,14 +327,26 @@ export default function Navbar() {
             </div>
           ) : isLoggedIn && user ? (
             <div className="flex items-center gap-4 md:gap-[13px] relative">
-              <button onClick={() => setIsMobileSearchActive(true)} className="md:hidden cursor-pointer p-1">
+              <button
+                onClick={() => setIsMobileSearchActive(true)}
+                className="md:hidden cursor-pointer p-1"
+              >
                 <Search className="w-5 h-5 text-[#FDFDFD]" />
               </button>
 
-              <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center gap-[13px] focus:outline-none cursor-pointer">
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center gap-[13px] focus:outline-none cursor-pointer"
+              >
                 <div className="relative w-[40px] h-[40px] md:w-[48px] md:h-[48px] rounded-full bg-neutral-900 border border-[#181D27] overflow-hidden flex items-center justify-center hover:opacity-80 transition-opacity">
                   {user.avatarUrl ? (
-                    <Image src={user.avatarUrl} alt={user.username} fill sizes="48px" className="object-cover" />
+                    <Image
+                      src={user.avatarUrl}
+                      alt={user.username}
+                      fill
+                      sizes="48px"
+                      className="object-cover"
+                    />
                   ) : (
                     <UserIcon className="w-5 h-5 md:w-6 md:h-6 text-[#A4A7AE]" />
                   )}
@@ -304,7 +356,6 @@ export default function Navbar() {
                 </div>
               </button>
 
-              {/* Dropdown Profile */}
               {isDropdownOpen && (
                 <div className="absolute right-0 top-[110%] w-48 bg-[#0A0D12] border border-[#181D27] rounded-2xl py-2 shadow-2xl flex flex-col z-50 animate-in fade-in slide-in-from-top-2 overflow-hidden">
                   <Link
@@ -329,16 +380,37 @@ export default function Navbar() {
           ) : (
             <>
               <div className="hidden md:flex gap-3">
-                <Button variant="outline" onClick={() => router.push("/login")} className="rounded-full text-[#FDFDFD] border border-[#181D27] hover:bg-[#181D27] px-6 cursor-pointer">Login</Button>
-                <Button onClick={() => router.push("/register")} className="rounded-full bg-[#6936F2] hover:bg-[#522BC8] px-6 cursor-pointer">Register</Button>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push("/login")}
+                  className="rounded-full text-[#FDFDFD] border border-[#181D27] hover:bg-[#181D27] px-6 cursor-pointer"
+                >
+                  Login
+                </Button>
+                <Button
+                  onClick={() => router.push("/register")}
+                  className="rounded-full bg-[#6936F2] hover:bg-[#522BC8] px-6 cursor-pointer"
+                >
+                  Register
+                </Button>
               </div>
 
               <div className="flex md:hidden items-center gap-4">
-                <button onClick={() => setIsMobileSearchActive(true)} className="cursor-pointer p-1">
+                <button
+                  onClick={() => setIsMobileSearchActive(true)}
+                  className="cursor-pointer p-1"
+                >
                   <Search className="w-5 h-5 text-[#FDFDFD]" />
                 </button>
-                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="cursor-pointer">
-                  {isMenuOpen ? <X className="text-[#FDFDFD]" /> : <Menu className="text-[#FDFDFD]" />}
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="cursor-pointer"
+                >
+                  {isMenuOpen ? (
+                    <X className="text-[#FDFDFD]" />
+                  ) : (
+                    <Menu className="text-[#FDFDFD]" />
+                  )}
                 </button>
               </div>
             </>
@@ -346,12 +418,28 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Menu Mobile Belum Login */}
       {isMenuOpen && !isLoggedIn && !isMobileSearchActive && (
         <div className="md:hidden w-full bg-[#000000] border-b border-[#181D27] p-4 flex flex-col gap-4 animate-in slide-in-from-top-5">
           <div className="flex gap-2 w-full">
-            <Button variant="outline" onClick={() => { setIsMenuOpen(false); router.push("/login"); }} className="w-full rounded-full border-[#181D27] text-[#FDFDFD] cursor-pointer">Login</Button>
-            <Button onClick={() => { setIsMenuOpen(false); router.push("/register"); }} className="w-full rounded-full bg-[#6936F2] text-[#FDFDFD] cursor-pointer">Register</Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsMenuOpen(false);
+                router.push("/login");
+              }}
+              className="w-full rounded-full border-[#181D27] text-[#FDFDFD] cursor-pointer"
+            >
+              Login
+            </Button>
+            <Button
+              onClick={() => {
+                setIsMenuOpen(false);
+                router.push("/register");
+              }}
+              className="w-full rounded-full bg-[#6936F2] text-[#FDFDFD] cursor-pointer"
+            >
+              Register
+            </Button>
           </div>
         </div>
       )}

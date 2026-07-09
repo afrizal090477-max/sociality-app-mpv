@@ -72,13 +72,11 @@ export default function CommentsModal({
   const [commentText, setCommentText] = useState('');
   const [isPosting, setIsPosting] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-
   const inputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let isMounted = true;
-
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       const fetchComments = async () => {
@@ -100,7 +98,6 @@ export default function CommentsModal({
     } else {
       document.body.style.overflow = 'unset';
     }
-
     return () => { 
       isMounted = false;
       document.body.style.overflow = 'unset'; 
@@ -156,13 +153,10 @@ export default function CommentsModal({
   const onEmojiClick = (emojiObject: any) => {
     setCommentText((prev) => prev + emojiObject.emoji);
   };
-
   if (!isOpen) return null;
-
   const getCommentAvatar = (comment: CommentData) => {
     return comment.author?.avatarUrl || comment.user?.avatarUrl || null;
   };
-
   const getCommentUsername = (comment: CommentData) => {
     return comment.author?.username || comment.user?.username || 'Unknown';
   };
@@ -180,7 +174,6 @@ export default function CommentsModal({
         </button>
 
         <div className="flex flex-col md:flex-row w-full h-full bg-[#0A0D12] rounded-t-[16px] md:rounded-none overflow-hidden shadow-2xl animate-in slide-in-from-bottom-full md:slide-in-from-bottom-0 md:zoom-in-95 duration-200">
-          
           <div className="hidden md:block relative w-[720px] h-full bg-neutral-900 border-r border-[#181D27] shrink-0">
             <Image src={post.imageUrl} alt="Post image" fill className="object-cover" sizes="(max-width: 1200px) 100vw, 720px" />
           </div>

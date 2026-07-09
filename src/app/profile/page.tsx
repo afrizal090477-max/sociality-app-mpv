@@ -27,14 +27,13 @@ interface PostItem {
 
 export default function ProfilePage() {
   const router = useRouter();
-  // States
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [savedPosts, setSavedPosts] = useState<PostItem[]>([]);
   const [activeTab, setActiveTab] = useState<'gallery' | 'saved'>('gallery');
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isLoadingContent, setIsLoadingContent] = useState(true);
-  // Fetch Gallery 
+   
   const fetchGallery = async () => {
     setIsLoadingContent(true);
     try {
@@ -49,7 +48,6 @@ export default function ProfilePage() {
     }
   };
 
-  // Fetch Saved (Pake Parameter & Anti-Cache)
   const fetchSaved = async () => {
     setIsLoadingContent(true);
     try {
@@ -140,7 +138,6 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#000000] text-white font-['SF_Pro'] relative pb-[100px] md:pb-0">
-      {/* MOBILE HEADER */}
       <div className="md:hidden sticky top-0 z-50 flex flex-row items-center px-[16px] h-[64px] bg-[#000000] border-b border-[#181D27]">
         <button onClick={() => router.back()} className="p-1 cursor-pointer">
           <ArrowLeft className="w-[24px] h-[24px] text-[#FDFDFD]" />
@@ -150,9 +147,7 @@ export default function ProfilePage() {
         </span>
       </div>
 
-      {/* MAIN CONTAINER */}
       <div className="flex flex-col items-center w-full max-w-[812px] mx-auto pt-[16px] md:pt-[40px] px-[16px] md:px-0 gap-[24px] md:gap-[40px]">
-        {/* --- PROFILE HEADER SECTION --- */}
         <div className="flex flex-col w-full gap-[24px]">
           
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center w-full gap-[16px] md:gap-0">
@@ -224,7 +219,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* --- TABS SECTION --- */}
         <div className="flex flex-col w-full gap-[24px]">
           
           <div className="flex flex-row items-center w-full">
@@ -244,7 +238,6 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          {/* --- CONTENT GRID SECTION --- */}
           {isLoadingContent ? (
             <div className="flex justify-center items-center py-20 w-full">
               <Loader2 className="w-8 h-8 text-[#7F51F9] animate-spin" />
