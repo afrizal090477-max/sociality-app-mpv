@@ -25,7 +25,6 @@ interface RawPost {
 function HomeContent() {
   const searchParams = useSearchParams();
   const currentSearchQuery = searchParams.get('search') || '';
-
   const [posts, setPosts] = useState<PostType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -60,7 +59,6 @@ function HomeContent() {
         setIsLoading(false);
       }
     };
-
     fetchPosts();
   }, []);
 
@@ -73,15 +71,16 @@ function HomeContent() {
       post.caption.toLowerCase().includes(query)
     );
   }, [posts, currentSearchQuery]);
+  
 
   return (
-    <div className="flex flex-col items-center w-full min-h-screen pt-4 md:pt-[120px] pb-20 px-4 bg-[#000000]">
+    <div className="flex flex-col items-center w-full min-h-screen pt-[16px] md:pt-[40px] pb-[100px] px-[16px] md:px-0 bg-[#000000]">
       {isLoading ? (
         <div className="flex justify-center items-center h-40">
           <Loader2 className="w-8 h-8 text-[#7F51F9] animate-spin" />
         </div>
       ) : filteredPosts.length > 0 ? (
-        <div className="flex flex-col gap-4 md:gap-[24px] w-full items-center">
+        <div className="flex flex-col gap-[16px] md:gap-[24px] w-full items-center">
           {filteredPosts.map((post, index) => (
             <PostCard 
               key={post.id} 
