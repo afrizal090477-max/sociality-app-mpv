@@ -81,11 +81,10 @@ function HomeContent() {
         </div>
       ) : filteredPosts.length > 0 ? (
         <div className="flex flex-col gap-[16px] md:gap-[24px] w-full items-center">
-          {filteredPosts.map((post, index) => (
+          {filteredPosts.map((post) => (
             <PostCard 
               key={post.id} 
               post={post} 
-              priority={index === 0}
             />
           ))}
         </div>
