@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Grid3X3, Bookmark, Send, ArrowLeft, Loader2, User } from 'lucide-react';
 import axiosInstance from '@/lib/axios';
 import { toast } from 'sonner';
-
+import FollowListModal from '@/components/features/FollowListModal';
 
 interface UserProfile {
   id: number;
@@ -33,6 +33,9 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<'gallery' | 'saved'>('gallery');
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isLoadingContent, setIsLoadingContent] = useState(true);
+
+  const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
+  const [followModalType, setFollowModalType] = useState<'followers' | 'following'>('followers');
    
   const fetchGallery = async () => {
     setIsLoadingContent(true);
@@ -63,33 +66,43 @@ export default function ProfilePage() {
     }
   };
 
+  const fetchProfileData = async () => {
+    try {
+      const resProfile = await axiosInstance.get(`/me?t=${Date.now()}`);
+      const data = resProfile.data?.data || {};
+      const profileData = data.profile || data.user || data;
+      const statsData = data.stats || {};
+
+      setProfile({
+        id: profileData.id,
+        name: profileData.name || profileData.username,
+        username: profileData.username,
+        avatarUrl: profileData.avatarUrl || null,
+        bio: profileData.bio || '',
+        postCount: statsData.posts || 0,
+        followersCount: statsData.followers || 0,
+        followingCount: statsData.following || 0,
+      });
+    } catch (error) {
+      console.error('Fetch profile error:', error);
+      toast.error('Gagal memuat profil');
+    }
+  };
+
   useEffect(() => {
     const loadInitialData = async () => {
-      try {
-        const resProfile = await axiosInstance.get('/me');
-        const data = resProfile.data?.data || {};
-        const profileData = data.profile || data.user || data;
-        const statsData = data.stats || {};
-
-        setProfile({
-          id: profileData.id,
-          name: profileData.name || profileData.username,
-          username: profileData.username,
-          avatarUrl: profileData.avatarUrl || null,
-          bio: profileData.bio || '',
-          postCount: statsData.posts || 0,
-          followersCount: statsData.followers || 0,
-          followingCount: statsData.following || 0,
-        });
-      } catch (error) {
-        console.error('Fetch profile error:', error);
-        toast.error('Gagal memuat profil');
-      } finally {
-        setIsLoadingProfile(false);
-      }
+      await fetchProfileData();
+      setIsLoadingProfile(false);
       fetchGallery();
     };
     loadInitialData();
+
+    const handleProfileUpdate = () => {
+      fetchProfileData(); 
+    };
+    window.addEventListener("profileUpdated", handleProfileUpdate);
+
+    return () => window.removeEventListener("profileUpdated", handleProfileUpdate);
   }, []);
 
   const handleTabChange = (tab: 'gallery' | 'saved') => {
@@ -119,6 +132,7 @@ export default function ProfilePage() {
       console.error(err);
     }
   };
+
   if (isLoadingProfile) {
     return (
       <div className="min-h-screen bg-[#000000] flex justify-center items-center">
@@ -126,6 +140,7 @@ export default function ProfilePage() {
       </div>
     );
   }
+  
   if (!profile) {
     return (
       <div className="min-h-screen bg-[#000000] flex justify-center items-center text-white">
@@ -133,8 +148,8 @@ export default function ProfilePage() {
       </div>
     );
   }
+  
   const currentContent = activeTab === 'gallery' ? posts : savedPosts;
-
 
   return (
     <div className="min-h-screen bg-[#000000] text-white font-['SF_Pro'] relative pb-[100px] md:pb-0">
@@ -206,16 +221,22 @@ export default function ProfilePage() {
             </div>
             <div className="w-px h-[50px] md:h-[66px] bg-[#181D27]"></div>
             
-            <div className="flex flex-col items-center flex-1">
-              <span className="text-[18px] md:text-[20px] font-bold text-[#FDFDFD] leading-[32px] md:leading-[34px] tracking-[-0.03em]">{profile.followersCount || 0}</span>
+            <button 
+              onClick={() => { setFollowModalType('followers'); setIsFollowModalOpen(true); }}
+              className="flex flex-col items-center flex-1 cursor-pointer group hover:opacity-80 transition-opacity"
+            >
+              <span className="text-[18px] md:text-[20px] font-bold text-[#FDFDFD] leading-[32px] md:leading-[34px] tracking-[-0.03em] group-hover:underline">{profile.followersCount || 0}</span>
               <span className="text-[12px] md:text-[16px] font-normal text-[#A4A7AE] leading-[16px] md:leading-[30px]">Followers</span>
-            </div>
+            </button>
             <div className="w-px h-[50px] md:h-[66px] bg-[#181D27]"></div>
             
-            <div className="flex flex-col items-center flex-1">
-              <span className="text-[18px] md:text-[20px] font-bold text-[#FDFDFD] leading-[32px] md:leading-[34px] tracking-[-0.03em]">{profile.followingCount || 0}</span>
+            <button 
+              onClick={() => { setFollowModalType('following'); setIsFollowModalOpen(true); }}
+              className="flex flex-col items-center flex-1 cursor-pointer group hover:opacity-80 transition-opacity"
+            >
+              <span className="text-[18px] md:text-[20px] font-bold text-[#FDFDFD] leading-[32px] md:leading-[34px] tracking-[-0.03em] group-hover:underline">{profile.followingCount || 0}</span>
               <span className="text-[12px] md:text-[16px] font-normal text-[#A4A7AE] leading-[16px] md:leading-[30px]">Following</span>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -288,7 +309,12 @@ export default function ProfilePage() {
 
         </div>
       </div>
-
+      
+      <FollowListModal 
+        isOpen={isFollowModalOpen} 
+        onClose={() => setIsFollowModalOpen(false)} 
+        type={followModalType} 
+      />
     </div>
   );
 }
