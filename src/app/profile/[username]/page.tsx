@@ -187,8 +187,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
                   <Image 
                     src={profile.avatarUrl} 
                     alt={profile.username} 
-                    fill 
-                    priority 
+                    fill  
                     sizes="(max-width: 768px) 64px, 80px"
                     className="object-cover" 
                   />
