@@ -35,14 +35,12 @@ interface SearchUser {
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-
   // State User & Menu
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
-
   // State Live Search
   const [isMobileSearchActive, setIsMobileSearchActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -117,14 +115,12 @@ export default function Navbar() {
   useEffect(() => {
     let isMounted = true;
     if (!debouncedQuery.trim()) return;
-
     const fetchResults = async () => {
       if (isMounted) setIsSearching(true);
       try {
         const response = await axiosInstance.get("/users/search", {
           params: { q: debouncedQuery },
         });
-
         if (isMounted) {
           const usersArray = response.data?.data?.users || [];
           setSearchResults(Array.isArray(usersArray) ? usersArray : []);
@@ -138,7 +134,6 @@ export default function Navbar() {
         if (isMounted) setIsSearching(false);
       }
     };
-
     fetchResults();
     return () => {
       isMounted = false;
@@ -152,7 +147,6 @@ export default function Navbar() {
     setIsDropdownOpen(false);
     window.location.href = "/login";
   };
-
   const handleSearchChange = (val: string) => {
     setSearchQuery(val);
     if (!val.trim()) {
@@ -213,7 +207,6 @@ export default function Navbar() {
       </div>
     );
   };
-
   const hiddenPages = ['/add-post', '/edit-profile'];
   if (hiddenPages.includes(pathname)) {
     return null; 
@@ -299,7 +292,6 @@ export default function Navbar() {
               </button>
 
               <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center gap-[13px] focus:outline-none cursor-pointer">
-                {/* 👈 FIX: Avatar pindah ke sebelah Kiri */}
                 <div className="relative w-[40px] h-[40px] md:w-[48px] md:h-[48px] rounded-full bg-neutral-900 border border-[#181D27] overflow-hidden flex items-center justify-center hover:opacity-80 transition-opacity">
                   {user.avatarUrl ? (
                     <Image src={user.avatarUrl} alt={user.username} fill sizes="48px" className="object-cover" />
@@ -307,7 +299,6 @@ export default function Navbar() {
                     <UserIcon className="w-5 h-5 md:w-6 md:h-6 text-[#A4A7AE]" />
                   )}
                 </div>
-                {/* 👈 FIX: Nama pindah ke sebelah Kanan, text-left */}
                 <div className="hidden md:block text-[16px] font-bold text-[#FDFDFD] leading-[30px] tracking-[-0.02em] font-['SF_Pro'] text-left">
                   {user.name || user.username}
                 </div>
