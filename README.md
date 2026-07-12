@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 Sociality - Social Media MVP
 
-## Getting Started
+[![Deploy on Vercel](https://img.shields.io/badge/Deployed_on-Vercel-black?style=for-the-badge&logo=vercel)](https://sociality-app-mpv.vercel.app/)
 
-First, run the development server:
+**Live Demo:** [https://sociality-app-mpv.vercel.app/](https://sociality-app-mpv.vercel.app/)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Sociality is a modern, full-stack frontend social media web application built as a final MVP project (Batch New York). It features a highly responsive UI, robust state management, and real-time feel interactions using Optimistic UI updates.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ✨ Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **🔐 Authentication:** Secure Login and Registration with form validation.
+- **👤 User Profile:** View and edit profiles, track followers/following, and manage avatars.
+- **📝 Post Management:** Create posts with image uploads and captions, and delete own posts.
+- **📰 Personalized Feed:** Infinite scrolling timeline featuring posts from followed users.
+- **❤️ Interactive Engagements:** Like, Comment, Save, and Follow users instantly.
+- **⚡ Optimistic UI:** Zero-delay interactions with automatic background reconciliation and rollback on errors.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠️ Tech Stack
 
-## Learn More
+This project is built with industry-standard technologies to ensure high performance, maintainability, and type safety:
 
-To learn more about Next.js, take a look at the following resources:
+- **Framework:** [Next.js](https://nextjs.org/) (App Router)
+- **Language:** [TypeScript](https://www.typescriptlang.org/)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/) & [shadcn/ui](https://ui.shadcn.com/)
+- **Server State & Caching:** [TanStack Query (React Query)](https://tanstack.com/query/v5)
+- **Client/Global State:** [Redux Toolkit](https://redux-toolkit.js.org/)
+- **Form Validation:** [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/)
+- **Date Formatting:** [Day.js](https://day.js.org/)
+- **HTTP Client:** [Axios](https://axios-http.com/)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🚀 Getting Started
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Follow these instructions to get the project up and running on your local machine.
 
-## Deploy on Vercel
+### Prerequisites
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Node.js (v18 or higher recommended)
+- npm or yarn
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Installation
+
+1. **Clone the repository:**
+   
+   git clone [https://github.com/afrizal090477-max/sociality-app-mpv.git](https://github.com/afrizal090477-max/sociality-app-mpv.git)
+   cd sociality-app-mpv
+
+2. npm install
+   # or
+   yarn install
+
+3. Create a .env.local file in the root directory and add your API endpoint URL:
+   Code snippet
+   NEXT_PUBLIC_API_URL=[https://be-social-media-api-production.up.railway.app/api](https://be-social-media-api-production.up.railway.app/api)
+
+4. npm run dev
+   # or
+   yarn dev
+
+5. Open your browser:
+   Navigate to http://localhost:3000 to view the application.
+
+Architecture Highlights
+Separation of Concerns: Clearly separated Client State (Redux for Auth/User data) and Server State (React Query for feeds and interactions) to minimize unnecessary API calls.
+
+Optimistic Updates: Leveraged React Query's onMutate to provide a seamless, instantaneous user experience for liking, saving, and following.
+
+Strict Type Safety: Comprehensive TypeScript interfaces and Zod schemas to catch errors during development.
+
+Built with passion for the Final MVP Assignment - Batch New York.
