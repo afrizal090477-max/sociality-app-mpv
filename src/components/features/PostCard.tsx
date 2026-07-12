@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import Link from "next/link"; 
 import { Heart, MessageCircle, Send, Bookmark, User } from "lucide-react";
 import axiosInstance from "@/lib/axios";
 import { toast } from "sonner";
@@ -37,7 +38,7 @@ interface ApiLikedUser {
   isFollowing?: boolean;
 }
 
-export function PostCard({ post }: PostCardProps) {
+export function PostCard({ post, priority }: PostCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLiked, setIsLiked] = useState(post.isLiked);
   const [likesCount, setLikesCount] = useState(post.likesCount);
@@ -90,7 +91,6 @@ export function PostCard({ post }: PostCardProps) {
       text: `Lihat postingan keren dari ${post.user.username} di Sociality!`,
       url: shareUrl,
     };
-
     try {
       if (navigator.share) {
         await navigator.share(shareData);
@@ -113,7 +113,6 @@ export function PostCard({ post }: PostCardProps) {
       ]);
       let usersData: ApiLikedUser[] = [];
       const rawLikes = likesRes.data;
-
       if (Array.isArray(rawLikes?.data)) {
         usersData = rawLikes.data;
       } else if (Array.isArray(rawLikes)) {
@@ -125,8 +124,8 @@ export function PostCard({ post }: PostCardProps) {
       } else if (Array.isArray(rawLikes?.users)) {
         usersData = rawLikes.users;
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let myFollowingData: any[] = [];
+      
+      let myFollowingData: { username: string }[] = [];
       const rawFollowing = followingRes.data;
 
       if (Array.isArray(rawFollowing?.data)) {
@@ -165,7 +164,10 @@ export function PostCard({ post }: PostCardProps) {
     <>
       <article className="flex flex-col items-start px-[16px] md:px-0 py-0 gap-[8px] md:gap-[12px] w-full max-w-[393px] md:max-w-[600px] mx-auto">
         <div className="flex flex-col items-start p-0 gap-[8px] md:gap-[12px] w-full">
-          <div className="flex flex-row items-center p-0 gap-[8px] md:gap-[12px] w-full h-[44px] md:h-[64px]">
+          <Link 
+            href={`/profile/${post.user.username}`}
+            className="flex flex-row items-center p-0 gap-[8px] md:gap-[12px] w-full h-[44px] md:h-[64px] hover:opacity-80 transition-opacity cursor-pointer"
+          >
             <div className="relative flex items-center justify-center w-[44px] h-[44px] md:w-[64px] md:h-[64px] rounded-full overflow-hidden bg-neutral-900 border border-neutral-800 shrink-0">
               {post.user.avatarUrl ? (
                 <Image
@@ -187,7 +189,7 @@ export function PostCard({ post }: PostCardProps) {
                 {new Date(post.createdAt).toLocaleDateString()}
               </span>
             </div>
-          </div>
+          </Link>
 
           <div className="relative w-full aspect-square md:w-[600px] md:h-[600px] bg-neutral-900 rounded-[8px] overflow-hidden shrink-0 border border-neutral-900">
             <Image
@@ -196,6 +198,7 @@ export function PostCard({ post }: PostCardProps) {
               fill
               sizes="(max-width: 768px) 100vw, 600px"
               className="object-cover"
+              priority={priority}
             />
           </div>
 
@@ -250,9 +253,14 @@ export function PostCard({ post }: PostCardProps) {
           </div>
 
           <div className="flex flex-col items-start p-0 gap-[0px] md:gap-[4px] w-full">
-            <h4 className="text-[14px] md:text-[16px] font-bold text-[#FDFDFD] leading-[28px] md:leading-[30px] tracking-[-0.01em] md:tracking-[-0.02em] font-['SF_Pro']">
-              {post.user.username}
-            </h4>
+            <Link 
+              href={`/profile/${post.user.username}`} 
+              className="hover:underline cursor-pointer"
+            >
+              <h4 className="text-[14px] md:text-[16px] font-bold text-[#FDFDFD] leading-[28px] md:leading-[30px] tracking-[-0.01em] md:tracking-[-0.02em] font-['SF_Pro']">
+                {post.user.username}
+              </h4>
+            </Link>
             <p
               className={`text-[14px] md:text-[16px] font-normal text-[#FDFDFD] leading-[28px] md:leading-[30px] tracking-[-0.02em] font-['SF_Pro'] break-words w-full ${!isExpanded ? "line-clamp-2" : ""}`}
             >
