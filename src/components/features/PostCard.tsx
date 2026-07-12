@@ -48,6 +48,7 @@ export function PostCard({ post, priority }: PostCardProps) {
   const [likedUsers, setLikedUsers] = useState<LikedUser[]>([]);
   const [isLoadingLikes, setIsLoadingLikes] = useState(false);
   const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
+  
   const likeMutation = useMutation({
     mutationFn: async (currentlyLiked: boolean) => {
       if (!currentlyLiked) {
@@ -147,7 +148,6 @@ export function PostCard({ post, priority }: PostCardProps) {
         avatarUrl: user.avatarUrl || null,
         isFollowing: user.isFollowing ?? myFollowingUsernames.includes(user.username),
       }));
-
       setLikedUsers(mappedUsers);
     } catch (err) {
       console.error("Fetch likes error:", err);
@@ -156,9 +156,9 @@ export function PostCard({ post, priority }: PostCardProps) {
       setIsLoadingLikes(false);
     }
   };
+  
   const captionText = post.caption || "";
   const isLongCaption = captionText.length > 90;
-  
   
   return (
     <>
@@ -185,9 +185,9 @@ export function PostCard({ post, priority }: PostCardProps) {
             </div>
           </Link>
 
-          <div className="relative w-full aspect-square md:w-[600px] md:h-[600px] bg-neutral-900 rounded-[8px] overflow-hidden shrink-0 border border-neutral-900">
+          <Link href={`/post/${post.id}`} className="relative block cursor-pointer w-full aspect-square md:w-[600px] md:h-[600px] bg-neutral-900 rounded-[8px] overflow-hidden shrink-0 border border-neutral-900">
             <Image src={post.imageUrl} alt="Post Image" fill sizes="(max-width: 768px) 100vw, 600px" className="object-cover" priority={priority} />
-          </div>
+          </Link>
 
           <div className="flex flex-row justify-between items-center p-0 w-full h-[28px] md:h-[30px]">
             <div className="flex flex-row items-center gap-[12px] md:gap-[16px]">

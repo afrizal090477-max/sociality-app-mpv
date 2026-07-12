@@ -32,21 +32,16 @@ export default function AddPostPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
-
   const { user } = useSelector((state: RootState) => state.auth);
   const userAvatar = user?.avatarUrl || null;
-
-  // 🚀 FIX 3: Gak usah pakai watch()! React Compiler lu bakal sujud syukur.
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<AddPostForm>({
     resolver: zodResolver(addPostSchema),
   });
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
   const [toastType, setToastType] = useState<"success" | "error">("success");
-
   const triggerToast = (message: string, type: "success" | "error" = "error") => {
     setToastMsg(message);
     setToastType(type);
@@ -127,7 +122,6 @@ export default function AddPostPage() {
 
   return (
     <div className="min-h-screen bg-[#000000] text-white font-['SF_Pro'] relative pb-[100px] md:pb-[100px] flex flex-col items-center">
-      
       {showToast && (
         <div className={`fixed z-[999] top-[86px] md:top-[112px] left-1/2 md:left-auto md:right-[120px] lg:right-[calc(50%-720px+120px)] transform -translate-x-1/2 md:translate-x-0 flex flex-row justify-center items-center px-[12px] py-[8px] gap-[8px] w-[353px] md:w-[291px] h-[40px] rounded-[8px] transition-all animate-in fade-in slide-in-from-top-5 ${toastType === 'success' ? 'bg-[#079455]' : 'bg-[#B41759]'}`}>
           <span className="flex-1 text-[14px] font-semibold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">
@@ -151,7 +145,7 @@ export default function AddPostPage() {
         
         <div className="relative w-[40px] h-[40px] rounded-full overflow-hidden bg-neutral-900 border border-[#181D27] shrink-0">
           {userAvatar ? (
-            <Image src={userAvatar} alt="Avatar" fill sizes="40px" className="object-cover" priority />
+            <Image src={userAvatar} alt="Avatar" fill sizes="40px" className="object-cover" />
           ) : (
             <User className="w-5 h-5 text-neutral-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
           )}
@@ -183,7 +177,9 @@ export default function AddPostPage() {
             >
               {previewUrl ? (
                 <>
-                  <Image src={previewUrl} alt="Preview" fill className="object-contain bg-black/50" />
+                  <Image src={previewUrl} alt="Preview" 
+                  fill 
+                  className="object-contain bg-black/50" />
                   <button 
                     type="button"
                     onClick={removeFile}
