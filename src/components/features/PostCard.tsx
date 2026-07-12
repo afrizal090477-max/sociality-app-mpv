@@ -37,7 +37,7 @@ interface ApiLikedUser {
   isFollowing?: boolean;
 }
 
-export function PostCard({ post}: PostCardProps) {
+export function PostCard({ post }: PostCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLiked, setIsLiked] = useState(post.isLiked);
   const [likesCount, setLikesCount] = useState(post.likesCount);
@@ -163,7 +163,7 @@ export function PostCard({ post}: PostCardProps) {
 
   return (
     <>
-      <article className="flex flex-col items-start p-0 gap-[8px] md:gap-[12px] w-full max-w-[364px] md:max-w-[600px] mx-auto">
+      <article className="flex flex-col items-start px-[16px] md:px-0 py-0 gap-[8px] md:gap-[12px] w-full max-w-[393px] md:max-w-[600px] mx-auto">
         <div className="flex flex-col items-start p-0 gap-[8px] md:gap-[12px] w-full">
           <div className="flex flex-row items-center p-0 gap-[8px] md:gap-[12px] w-full h-[44px] md:h-[64px]">
             <div className="relative flex items-center justify-center w-[44px] h-[44px] md:w-[64px] md:h-[64px] rounded-full overflow-hidden bg-neutral-900 border border-neutral-800 shrink-0">
