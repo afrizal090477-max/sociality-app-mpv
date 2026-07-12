@@ -35,21 +35,19 @@ interface SearchUser {
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
-
   const [isMobileSearchActive, setIsMobileSearchActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
-
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -78,7 +76,6 @@ export default function Navbar() {
 
     const handleProfileUpdate = () => fetchUserProfile();
     window.addEventListener("profileUpdated", handleProfileUpdate);
-
     return () =>
       window.removeEventListener("profileUpdated", handleProfileUpdate);
   }, [pathname]);
@@ -96,6 +93,27 @@ export default function Navbar() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMobileSearchActive]);
+
+  useEffect(() => {
+    const handleClickOutsideDropdown = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsDropdownOpen(false);
+      }
+    };
+    if (isDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutsideDropdown);
+      document.addEventListener("keydown", handleEscapeKey);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutsideDropdown);
+      document.removeEventListener("keydown", handleEscapeKey);
+    };
+  }, [isDropdownOpen]);
 
   useEffect(() => {
     if (isMobileSearchActive) {
@@ -142,6 +160,7 @@ export default function Navbar() {
       isMounted = false;
     };
   }, [debouncedQuery]);
+  
   const handleLogout = () => {
     localStorage.removeItem("token");
     setIsLoggedIn(false);
@@ -149,6 +168,7 @@ export default function Navbar() {
     setIsDropdownOpen(false);
     window.location.href = "/login";
   };
+  
   const handleSearchChange = (val: string) => {
     setSearchQuery(val);
     if (!val.trim()) {
@@ -233,15 +253,20 @@ export default function Navbar() {
       </div>
     );
   };
-  const hiddenPages = ["/add-post", "/edit-profile"];
+  
+  // 🔥 FIX 1: Array ini kita KOSONGKAN biar Navbar GAK PERNAH ke-destroy sepenuhnya
+  const hiddenPages: string[] = [];
   if (hiddenPages.includes(pathname)) {
     return null;
   }
 
+  // 🔥 FIX 2: Halaman Add Post masuk ke isHideOnMobile biar Navbarnya MINGGIR saat dibuka via HP
+  const isHideOnMobile = pathname === "/profile" || pathname.startsWith("/profile/") || pathname === "/edit-profile" || pathname === "/add-post";
+
   return (
     <>
       {isMobileSearchActive && (
-        <div className="fixed inset-0 z-[100] bg-[#000000] flex flex-col md:hidden animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-[110] bg-[#000000] flex flex-col md:hidden animate-in fade-in zoom-in-95">
           <div className="flex flex-row items-center px-[16px] gap-[16px] w-full h-[64px] border-b border-[#181D27] shrink-0">
             <div className="flex flex-row items-center px-[12px] py-[8px] gap-[6px] flex-1 h-[40px] bg-[#0A0D12] border border-[#181D27] rounded-[9999px]">
               <Search className="w-[20px] h-[20px] text-[#717680] shrink-0" />
@@ -275,14 +300,15 @@ export default function Navbar() {
         </div>
       )}
 
-      <nav className="sticky top-0 z-50 w-full h-[64px] md:h-[80px] bg-[#000000] border-b border-[#181D27] flex items-center justify-between px-[16px] md:px-[120px]">
+      {/* Terapkan isHideOnMobile di className nav ini */}
+      <nav className={`sticky top-0 z-[100] w-full h-[64px] md:h-[80px] bg-[#000000] border-b border-[#181D27] justify-between px-[16px] md:px-[120px] ${isHideOnMobile ? 'hidden md:flex items-center' : 'flex items-center'}`}>
         <Link href="/" className="flex items-center gap-[11px]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src="/assets/Logo.svg"
             alt="Sociality Logo"
             width={30}
             height={30}
+            priority 
           />
           <span className="text-[24px] font-bold text-[#FDFDFD] leading-[36px] font-['SF_Pro'] hidden md:block">
             Sociality
@@ -313,7 +339,7 @@ export default function Navbar() {
           </div>
 
           {isSearchDropdownOpen && searchQuery.trim() !== "" && (
-            <div className="absolute top-[calc(100%+12px)] left-0 w-full bg-[#0A0D12] border border-[#181D27] rounded-[20px] p-[20px] shadow-2xl overflow-hidden max-h-[60vh] overflow-y-auto z-[100]">
+            <div className="absolute top-[calc(100%+12px)] left-0 w-full bg-[#0A0D12] border border-[#181D27] rounded-[20px] p-[20px] shadow-2xl overflow-hidden max-h-[60vh] overflow-y-auto z-[120]">
               {renderSearchResults(false)}
             </div>
           )}
@@ -326,7 +352,7 @@ export default function Navbar() {
               <div className="hidden md:block h-6 w-20 bg-neutral-900 rounded-md"></div>
             </div>
           ) : isLoggedIn && user ? (
-            <div className="flex items-center gap-4 md:gap-[13px] relative">
+            <div className="flex items-center gap-4 md:gap-[13px] relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsMobileSearchActive(true)}
                 className="md:hidden cursor-pointer p-1"
@@ -357,7 +383,7 @@ export default function Navbar() {
               </button>
 
               {isDropdownOpen && (
-                <div className="absolute right-0 top-[110%] w-48 bg-[#0A0D12] border border-[#181D27] rounded-2xl py-2 shadow-2xl flex flex-col z-50 animate-in fade-in slide-in-from-top-2 overflow-hidden">
+                <div className="absolute right-0 top-[110%] w-48 bg-[#0A0D12] border border-[#181D27] rounded-2xl py-2 shadow-2xl flex flex-col z-[120] animate-in fade-in slide-in-from-top-2 overflow-hidden">
                   <Link
                     href="/profile"
                     onClick={() => setIsDropdownOpen(false)}
@@ -419,7 +445,7 @@ export default function Navbar() {
       </nav>
 
       {isMenuOpen && !isLoggedIn && !isMobileSearchActive && (
-        <div className="md:hidden w-full bg-[#000000] border-b border-[#181D27] p-4 flex flex-col gap-4 animate-in slide-in-from-top-5">
+        <div className="md:hidden w-full bg-[#000000] border-b border-[#181D27] p-4 flex flex-col gap-4 animate-in slide-in-from-top-5 relative z-[90]">
           <div className="flex gap-2 w-full">
             <Button
               variant="outline"
