@@ -64,7 +64,6 @@ function HomeContent() {
 
   const filteredPosts = useMemo(() => {
     if (!currentSearchQuery) return posts;
-    
     const query = currentSearchQuery.toLowerCase().trim();
     return posts.filter((post) => 
       post.user.username.toLowerCase().includes(query) || 
@@ -81,10 +80,11 @@ function HomeContent() {
         </div>
       ) : filteredPosts.length > 0 ? (
         <div className="flex flex-col gap-[16px] md:gap-[24px] w-full items-center">
-          {filteredPosts.map((post) => (
+          {filteredPosts.map((post, index) => (
             <PostCard 
               key={post.id} 
               post={post} 
+              priority={index === 0}
             />
           ))}
         </div>

@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link'; 
 import { Grid3X3, Bookmark, Send, ArrowLeft, Loader2, User } from 'lucide-react';
 import axiosInstance from '@/lib/axios';
 import { toast } from 'sonner';
@@ -17,6 +16,7 @@ interface UserProfile {
   postCount: number;
   followersCount: number;
   followingCount: number;
+  likesCount: number;
   bio?: string;
 }
 
@@ -26,10 +26,10 @@ interface PostItem {
 }
 
 export default function ProfilePage() {
-  const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [savedPosts, setSavedPosts] = useState<PostItem[]>([]);
+  // 🚀 FIX: Kembalikan jadi 2 Tab aja (Gallery & Saved)
   const [activeTab, setActiveTab] = useState<'gallery' | 'saved'>('gallery');
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isLoadingContent, setIsLoadingContent] = useState(true);
@@ -37,7 +37,7 @@ export default function ProfilePage() {
   const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
   const [followModalType, setFollowModalType] = useState<'followers' | 'following'>('followers');
    
-  const fetchGallery = async () => {
+  const fetchGallery = useCallback(async () => {
     setIsLoadingContent(true);
     try {
       const res = await axiosInstance.get(`/me/posts?page=1&limit=50&t=${Date.now()}`);
@@ -49,9 +49,9 @@ export default function ProfilePage() {
     } finally {
       setIsLoadingContent(false);
     }
-  };
+  }, []);
 
-  const fetchSaved = async () => {
+  const fetchSaved = useCallback(async () => {
     setIsLoadingContent(true);
     try {
       const res = await axiosInstance.get(`/me/saved?page=1&limit=50&t=${Date.now()}`);
@@ -64,14 +64,25 @@ export default function ProfilePage() {
     } finally {
       setIsLoadingContent(false);
     }
-  };
+  }, []);
 
-  const fetchProfileData = async () => {
+  const fetchProfileData = useCallback(async () => {
     try {
-      const resProfile = await axiosInstance.get(`/me?t=${Date.now()}`);
-      const data = resProfile.data?.data || {};
+      const [profileRes, followersRes, followingRes, postsRes, likesRes] = await Promise.all([
+        axiosInstance.get(`/me?t=${Date.now()}`),
+        axiosInstance.get(`/me/followers?t=${Date.now()}`).catch(() => ({ data: { data: [] } })),
+        axiosInstance.get(`/me/following?t=${Date.now()}`).catch(() => ({ data: { data: [] } })),
+        axiosInstance.get(`/me/posts?t=${Date.now()}`).catch(() => ({ data: { data: [] } })),
+        axiosInstance.get(`/me/likes?t=${Date.now()}`).catch(() => ({ data: { data: [] } }))
+      ]);
+
+      const data = profileRes.data?.data || {};
       const profileData = data.profile || data.user || data;
-      const statsData = data.stats || {};
+
+      const followersArray = followersRes.data?.data?.users || followersRes.data?.data?.followers || followersRes.data?.data || [];
+      const followingArray = followingRes.data?.data?.users || followingRes.data?.data?.following || followingRes.data?.data || [];
+      const postsArray = postsRes.data?.data?.posts || postsRes.data?.data?.items || postsRes.data?.data || [];
+      const likesArray = likesRes.data?.data?.likes || likesRes.data?.data?.posts || likesRes.data?.data || [];
 
       setProfile({
         id: profileData.id,
@@ -79,15 +90,17 @@ export default function ProfilePage() {
         username: profileData.username,
         avatarUrl: profileData.avatarUrl || null,
         bio: profileData.bio || '',
-        postCount: statsData.posts || 0,
-        followersCount: statsData.followers || 0,
-        followingCount: statsData.following || 0,
+        
+        postCount: Array.isArray(postsArray) ? postsArray.length : 0,
+        followersCount: Array.isArray(followersArray) ? followersArray.length : 0,
+        followingCount: Array.isArray(followingArray) ? followingArray.length : 0,
+        likesCount: Array.isArray(likesArray) ? likesArray.length : 0,
       });
     } catch (error) {
       console.error('Fetch profile error:', error);
       toast.error('Gagal memuat profil');
     }
-  };
+  }, []);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -103,16 +116,13 @@ export default function ProfilePage() {
     window.addEventListener("profileUpdated", handleProfileUpdate);
 
     return () => window.removeEventListener("profileUpdated", handleProfileUpdate);
-  }, []);
+  }, [fetchProfileData, fetchGallery]);
 
   const handleTabChange = (tab: 'gallery' | 'saved') => {
     if (tab === activeTab) return; 
     setActiveTab(tab);  
-    if (tab === 'gallery') {
-      fetchGallery();
-    } else {
-      fetchSaved();
-    }
+    if (tab === 'gallery') fetchGallery();
+    else if (tab === 'saved') fetchSaved();
   };
 
   const handleShareProfile = async () => {
@@ -153,19 +163,30 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#000000] text-white font-['SF_Pro'] relative pb-[100px] md:pb-0">
-      <div className="md:hidden sticky top-0 z-50 flex flex-row items-center px-[16px] h-[64px] bg-[#000000] border-b border-[#181D27]">
-        <button onClick={() => router.back()} className="p-1 cursor-pointer">
-          <ArrowLeft className="w-[24px] h-[24px] text-[#FDFDFD]" />
-        </button>
-        <span className="flex-1 text-[16px] font-bold text-[#FDFDFD] text-center ml-[-32px]">
-          {profile.username}
-        </span>
+      
+      <div className="md:hidden sticky top-0 z-50 w-full h-[64px] bg-[#000000] border-b border-[#181D27] flex items-center justify-between px-[16px]">
+        <div className="flex items-center gap-[8px]">
+          <Link href="/" className="p-1 -ml-1 cursor-pointer hover:opacity-80">
+            <ArrowLeft className="w-[24px] h-[24px] text-[#FDFDFD]" />
+          </Link>
+          <span className="text-[16px] font-bold text-[#FDFDFD] truncate max-w-[200px]">
+            {profile.username}
+          </span>
+        </div>
+        
+        <div className="relative w-[40px] h-[40px] rounded-full overflow-hidden bg-neutral-900 border border-[#181D27] shrink-0">
+          {profile.avatarUrl ? (
+            <Image src={profile.avatarUrl} alt={profile.username} fill sizes="40px" className="object-cover" />
+          ) : (
+            <User className="w-5 h-5 text-neutral-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col items-center w-full max-w-[812px] mx-auto pt-[16px] md:pt-[40px] px-[16px] md:px-0 gap-[24px] md:gap-[40px]">
         <div className="flex flex-col w-full gap-[24px]">
           
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center w-full gap-[16px] md:gap-0">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center w-full gap-[12px] md:gap-0">
             <div className="flex flex-row items-center gap-[12px] md:gap-[20px]">
               <div className="w-[64px] h-[64px] md:w-[80px] md:h-[80px] rounded-full overflow-hidden bg-neutral-900 border border-[#181D27] shrink-0 relative flex items-center justify-center">
                 {profile.avatarUrl ? (
@@ -181,7 +202,7 @@ export default function ProfilePage() {
                 )}
               </div>
               <div className="flex flex-col justify-center">
-                <h1 className="text-[16px] md:text-[20px] font-bold text-[#FDFDFD] leading-[28px] md:leading-[34px] tracking-[-0.01em]">
+                <h1 className="text-[14px] md:text-[20px] font-bold text-[#FDFDFD] leading-[28px] md:leading-[34px] tracking-[-0.01em]">
                   {profile.name || profile.username}
                 </h1>
                 <p className="text-[14px] md:text-[16px] font-normal text-[#A4A7AE] leading-[28px] md:leading-[30px] tracking-[-0.02em]">
@@ -216,32 +237,41 @@ export default function ProfilePage() {
 
           <div className="flex flex-row items-center justify-between w-full h-[50px] md:h-[66px]">
             <div className="flex flex-col items-center flex-1">
-              <span className="text-[18px] md:text-[20px] font-bold text-[#FDFDFD] leading-[32px] md:leading-[34px] tracking-[-0.03em]">{profile.postCount || 0}</span>
-              <span className="text-[12px] md:text-[16px] font-normal text-[#A4A7AE] leading-[16px] md:leading-[30px]">Posts</span>
+              <span className="text-[16px] md:text-[20px] font-bold text-[#FDFDFD] leading-[32px] md:leading-[34px] tracking-[-0.03em]">{profile.postCount || 0}</span>
+              <span className="text-[12px] md:text-[16px] font-normal text-[#A4A7AE] leading-[16px] md:leading-[30px]">Post</span>
             </div>
-            <div className="w-px h-[50px] md:h-[66px] bg-[#181D27]"></div>
+
+            <div className="w-px h-[40px] md:h-[66px] bg-[#181D27]"></div>
             
             <button 
               onClick={() => { setFollowModalType('followers'); setIsFollowModalOpen(true); }}
               className="flex flex-col items-center flex-1 cursor-pointer group hover:opacity-80 transition-opacity"
             >
-              <span className="text-[18px] md:text-[20px] font-bold text-[#FDFDFD] leading-[32px] md:leading-[34px] tracking-[-0.03em] group-hover:underline">{profile.followersCount || 0}</span>
+              <span className="text-[16px] md:text-[20px] font-bold text-[#FDFDFD] leading-[32px] md:leading-[34px] tracking-[-0.03em] group-hover:underline">{profile.followersCount || 0}</span>
               <span className="text-[12px] md:text-[16px] font-normal text-[#A4A7AE] leading-[16px] md:leading-[30px]">Followers</span>
             </button>
-            <div className="w-px h-[50px] md:h-[66px] bg-[#181D27]"></div>
+
+            <div className="w-px h-[40px] md:h-[66px] bg-[#181D27]"></div>
             
             <button 
               onClick={() => { setFollowModalType('following'); setIsFollowModalOpen(true); }}
               className="flex flex-col items-center flex-1 cursor-pointer group hover:opacity-80 transition-opacity"
             >
-              <span className="text-[18px] md:text-[20px] font-bold text-[#FDFDFD] leading-[32px] md:leading-[34px] tracking-[-0.03em] group-hover:underline">{profile.followingCount || 0}</span>
+              <span className="text-[16px] md:text-[20px] font-bold text-[#FDFDFD] leading-[32px] md:leading-[34px] tracking-[-0.03em] group-hover:underline">{profile.followingCount || 0}</span>
               <span className="text-[12px] md:text-[16px] font-normal text-[#A4A7AE] leading-[16px] md:leading-[30px]">Following</span>
             </button>
+
+            <div className="w-px h-[40px] md:h-[66px] bg-[#181D27]"></div>
+            
+            <div className="flex flex-col items-center flex-1">
+              <span className="text-[16px] md:text-[20px] font-bold text-[#FDFDFD] leading-[32px] md:leading-[34px] tracking-[-0.03em]">{profile.likesCount || 0}</span>
+              <span className="text-[12px] md:text-[16px] font-normal text-[#A4A7AE] leading-[16px] md:leading-[30px]">Likes</span>
+            </div>
           </div>
         </div>
 
         <div className="flex flex-col w-full gap-[24px]">
-          
+          {/* 🚀 FIX: Tab Liked dihapus, sisa 2 tab flex-1 biar ngebelah 2 persis Figma */}
           <div className="flex flex-row items-center w-full">
             <button 
               onClick={() => handleTabChange('gallery')}
@@ -289,7 +319,7 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-[2px] md:gap-[4px] w-full">
-              {currentContent.map((item) => (
+              {currentContent.map((item, index) => (
                 <Link 
                   href={`/post/${item.id}`} 
                   key={item.id} 
@@ -301,6 +331,7 @@ export default function ProfilePage() {
                     fill 
                     className="object-cover"
                     sizes="(max-width: 768px) 33vw, 268px"
+                    loading={index < 3 ? "eager" : "lazy"} 
                   />
                 </Link>
               ))}

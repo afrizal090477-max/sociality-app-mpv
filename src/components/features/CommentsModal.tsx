@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link'; 
 import { X, Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Smile, Loader2 } from 'lucide-react';
 import axiosInstance from '@/lib/axios';
 import { toast } from 'sonner';
@@ -149,11 +150,11 @@ export default function CommentsModal({
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onEmojiClick = (emojiObject: any) => {
+  const onEmojiClick = (emojiObject: { emoji: string }) => {
     setCommentText((prev) => prev + emojiObject.emoji);
   };
   if (!isOpen) return null;
+  
   const getCommentAvatar = (comment: CommentData) => {
     return comment.author?.avatarUrl || comment.user?.avatarUrl || null;
   };
@@ -163,7 +164,6 @@ export default function CommentsModal({
 
   return (
     <div className="fixed inset-0 z-[999] flex flex-col justify-end md:justify-center items-center bg-[rgba(10,13,18,0.8)] animate-in fade-in duration-200">
-      
       <div className="flex flex-col items-end gap-[8px] md:gap-[24px] w-full md:w-[1200px] h-[75vh] md:h-[768px]">
         
         <button 
@@ -179,12 +179,10 @@ export default function CommentsModal({
           </div>
 
           <div className="flex flex-col w-full md:w-[480px] h-full overflow-hidden relative">
-            
             <div className="flex flex-col flex-1 overflow-y-auto px-[16px] py-[16px] md:px-[20px] md:py-[20px] gap-[12px] md:gap-[16px]">
-              
               <div className="hidden md:flex flex-col gap-[8px] pb-[16px] border-b border-[#181D27]">
                 <div className="flex flex-row justify-between items-center h-[46px]">
-                  <div className="flex items-center gap-[13px]">
+                  <Link href={`/profile/${post.user.username}`} onClick={onClose} className="flex items-center gap-[13px] hover:opacity-80 transition-opacity cursor-pointer">
                     <div className="w-[40px] h-[40px] rounded-full bg-neutral-800 overflow-hidden relative shrink-0">
                       {post.user.avatarUrl ? (
                         <Image src={post.user.avatarUrl} alt={post.user.username} fill sizes="40px" className="object-cover" />
@@ -202,7 +200,8 @@ export default function CommentsModal({
                         {new Date(post.createdAt).toLocaleDateString()}
                       </span>
                     </div>
-                  </div>
+                  </Link>
+                  
                   <button className="p-1 cursor-pointer hover:bg-[#181D27] rounded-full transition-colors">
                     <MoreHorizontal className="w-[24px] h-[24px] text-[#FDFDFD]" />
                   </button>
@@ -239,7 +238,7 @@ export default function CommentsModal({
                     return (
                       <div key={comment.id} className="flex flex-col gap-[8px]">
                         <div className="flex flex-row items-start gap-[8px]">
-                          <div className="w-[40px] h-[40px] rounded-full bg-neutral-800 overflow-hidden relative shrink-0">
+                          <Link href={`/profile/${username}`} onClick={onClose} className="w-[40px] h-[40px] rounded-full bg-neutral-800 overflow-hidden relative shrink-0 hover:opacity-80 transition-opacity cursor-pointer">
                             {avatarUrl ? (
                               <Image src={avatarUrl} alt={username} fill sizes="40px" className="object-cover" />
                             ) : (
@@ -247,12 +246,13 @@ export default function CommentsModal({
                                 {username.charAt(0).toUpperCase()}
                               </div>
                             )}
-                          </div>
+                          </Link>
+                          
                           <div className="flex flex-col flex-1">
                             <div className="flex items-center gap-[8px]">
-                              <span className="text-[14px] font-bold text-[#FDFDFD] leading-[28px] tracking-[-0.01em] font-['SF_Pro']">
+                              <Link href={`/profile/${username}`} onClick={onClose} className="text-[14px] font-bold text-[#FDFDFD] leading-[28px] tracking-[-0.01em] font-['SF_Pro'] hover:underline cursor-pointer">
                                 {username}
-                              </span>
+                              </Link>
                               <span className="text-[12px] font-normal text-[#A4A7AE] leading-[16px] font-['SF_Pro']">
                                 {new Date(comment.createdAt).toLocaleDateString()}
                               </span>
@@ -291,7 +291,6 @@ export default function CommentsModal({
                       {localCommentsCount + comments.length}
                     </span>
                   </button>
-                  {/* Tombol Share */}
                   <button onClick={onShare} className="flex items-center gap-[6px] hover:opacity-80 transition-opacity cursor-pointer">
                     <Send className="w-[24px] h-[24px] text-[#FDFDFD]" />
                     <span className="text-[16px] font-semibold text-[#FDFDFD] leading-[30px] tracking-[-0.02em] font-['SF_Pro']">{post.sharesCount}</span>

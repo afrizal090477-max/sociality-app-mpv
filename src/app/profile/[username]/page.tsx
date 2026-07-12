@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect, use, useCallback } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
+import Link from 'next/link'; 
 import { useRouter } from 'next/navigation';
 import { Grid3X3, Heart, ArrowLeft, Loader2, User, Send, CheckCircle } from 'lucide-react';
 import axiosInstance from '@/lib/axios';
 import { toast } from 'sonner';
-
+import FollowListModal from '@/components/features/FollowListModal';
 
 interface UserProfile {
   id: number;
@@ -17,6 +17,7 @@ interface UserProfile {
   postCount: number;
   followersCount: number;
   followingCount: number;
+  likesCount: number;
   bio?: string;
   isFollowing: boolean; 
 }
@@ -25,7 +26,6 @@ interface PostItem {
   id: number;
   imageUrl: string;
 }
-
 
 export default function FriendProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = use(params);
@@ -38,7 +38,10 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
   const [isLoadingContent, setIsLoadingContent] = useState(true);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
 
-  const fetchGallery = async () => {
+  const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
+  const [followModalType, setFollowModalType] = useState<'followers' | 'following'>('followers');
+
+  const fetchGallery = useCallback(async () => {
     setIsLoadingContent(true);
     try {
       const res = await axiosInstance.get(`/users/${username}/posts?page=1&limit=50&t=${Date.now()}`);
@@ -50,9 +53,9 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
     } finally {
       setIsLoadingContent(false);
     }
-  };
+  }, [username]);
 
-  const fetchLiked = async () => {
+  const fetchLiked = useCallback(async () => {
     setIsLoadingContent(true);
     try {
       const res = await axiosInstance.get(`/users/${username}/likes?page=1&limit=50&t=${Date.now()}`);
@@ -64,39 +67,63 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
     } finally {
       setIsLoadingContent(false);
     }
-  };
+  }, [username]);
+
+  const fetchProfileData = useCallback(async () => {
+    try {
+      const [profileRes, followersRes, followingRes, postsRes, likesRes] = await Promise.all([
+        axiosInstance.get(`/users/${username}`),
+        axiosInstance.get(`/users/${username}/followers`).catch(() => ({ data: { data: [] } })),
+        axiosInstance.get(`/users/${username}/following`).catch(() => ({ data: { data: [] } })),
+        axiosInstance.get(`/users/${username}/posts`).catch(() => ({ data: { data: [] } })),
+        axiosInstance.get(`/users/${username}/likes`).catch(() => ({ data: { data: [] } }))
+      ]);
+
+      const data = profileRes.data?.data || {};
+      const profileData = data.profile || data.user || data;
+
+      const followersArray = followersRes.data?.data?.users || followersRes.data?.data?.followers || followersRes.data?.data || [];
+      const followingArray = followingRes.data?.data?.users || followingRes.data?.data?.following || followingRes.data?.data || [];
+      const postsArray = postsRes.data?.data?.posts || postsRes.data?.data?.items || postsRes.data?.data || [];
+      const likesArray = likesRes.data?.data?.likes || likesRes.data?.data?.posts || likesRes.data?.data || [];
+
+      setProfile({
+        id: profileData.id,
+        name: profileData.name || profileData.username,
+        username: profileData.username,
+        avatarUrl: profileData.avatarUrl || null,
+        bio: profileData.bio || '',
+        
+        postCount: Array.isArray(postsArray) ? postsArray.length : 0,
+        followersCount: Array.isArray(followersArray) ? followersArray.length : 0,
+        followingCount: Array.isArray(followingArray) ? followingArray.length : 0,
+        likesCount: Array.isArray(likesArray) ? likesArray.length : 0,
+        
+        isFollowing: profileData.isFollowing || false,
+      });
+    } catch (error) {
+      console.error('Fetch profile error:', error);
+      toast.error('Profil tidak ditemukan');
+      router.push('/'); 
+    }
+  }, [username, router]);
 
   useEffect(() => {
     const loadInitialData = async () => {
-      try {
-        const resProfile = await axiosInstance.get(`/users/${username}`);
-        const data = resProfile.data?.data || {};
-        const profileData = data.profile || data.user || data;
-        const statsData = data.stats || {};
-
-        setProfile({
-          id: profileData.id,
-          name: profileData.name || profileData.username,
-          username: profileData.username,
-          avatarUrl: profileData.avatarUrl || null,
-          bio: profileData.bio || '',
-          postCount: statsData.posts || 0,
-          followersCount: statsData.followers || 0,
-          followingCount: statsData.following || 0,
-          isFollowing: profileData.isFollowing || false,
-        });
-      } catch (error) {
-        console.error('Fetch profile error:', error);
-        toast.error('Profil tidak ditemukan');
-        router.push('/'); 
-      } finally {
-        setIsLoadingProfile(false);
-      }
+      await fetchProfileData();
+      setIsLoadingProfile(false);
       fetchGallery();
     };
+    
     loadInitialData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [username, router]);
+
+    const handleProfileUpdate = () => {
+      fetchProfileData(); 
+    };
+    window.addEventListener("profileUpdated", handleProfileUpdate);
+
+    return () => window.removeEventListener("profileUpdated", handleProfileUpdate);
+  }, [fetchProfileData, fetchGallery]); 
 
   const handleTabChange = (tab: 'gallery' | 'liked') => {
     if (tab === activeTab) return; 
@@ -112,17 +139,20 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
     if (!profile) return;
     const previousState = profile.isFollowing;
     setIsFollowLoading(true);
+    
     setProfile({ 
       ...profile, 
       isFollowing: !previousState, 
       followersCount: previousState ? profile.followersCount - 1 : profile.followersCount + 1 
     });
+    
     try {
       if (previousState) {
         await axiosInstance.delete(`/follow/${profile.username}`);
       } else {
         await axiosInstance.post(`/follow/${profile.username}`);
       }
+      window.dispatchEvent(new Event("profileUpdated"));
     } catch (error) {
       console.error('Follow toggle error:', error);
       toast.error('Gagal memproses aksi');
@@ -146,6 +176,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
       console.error(err);
     }
   };
+
   if (isLoadingProfile) {
     return (
       <div className="min-h-screen bg-[#000000] flex justify-center items-center">
@@ -153,21 +184,37 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
       </div>
     );
   }
+  
   if (!profile) return null;
+  
   const currentContent = activeTab === 'gallery' ? posts : likedPosts;
 
   return (
     <div className="min-h-screen bg-[#000000] text-white font-['SF_Pro'] relative pb-[100px] md:pb-0">
-      <div className="md:hidden sticky top-0 z-50 flex flex-row items-center px-[16px] h-[64px] bg-[#000000] border-b border-[#181D27]">
-        <button onClick={() => router.back()} className="p-1 cursor-pointer">
-          <ArrowLeft className="w-[24px] h-[24px] text-[#FDFDFD]" />
-        </button>
-        <span className="flex-1 text-[16px] font-bold text-[#FDFDFD] text-center ml-[-32px]">
-          {profile.username}
-        </span>
+      
+      {/* Cuma tampil di Mobile, di Desktop hilang */}
+      <div className="md:hidden sticky top-0 z-50 w-full h-[64px] bg-[#000000] border-b border-[#181D27] flex items-center justify-between px-[16px]">
+        <div className="flex items-center gap-[8px]">
+          <Link href="/" className="p-1 -ml-1 cursor-pointer hover:opacity-80">
+            <ArrowLeft className="w-[24px] h-[24px] text-[#FDFDFD]" />
+          </Link>
+          <span className="text-[16px] font-bold text-[#FDFDFD] truncate max-w-[200px]">
+            {profile.username}
+          </span>
+        </div>
+        
+        <div className="relative w-[40px] h-[40px] rounded-full overflow-hidden bg-neutral-900 border border-[#181D27] shrink-0">
+          {profile.avatarUrl ? (
+            <Image src={profile.avatarUrl} alt={profile.username} fill sizes="40px" className="object-cover" />
+          ) : (
+            <User className="w-5 h-5 text-neutral-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col items-center w-full max-w-[812px] mx-auto pt-[16px] md:pt-[40px] px-[16px] md:px-0 gap-[24px] md:gap-[40px]">
+        {/* 🚀 FIX: Tombol "Back to Home" versi Desktop resmi dihanguskan sesuai Figma! */}
+
         <div className="flex flex-col w-full gap-[24px]">
           
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center w-full gap-[16px] md:gap-0">
@@ -231,20 +278,35 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
 
           <div className="flex flex-row items-center justify-between w-full h-[50px] md:h-[66px]">
             <div className="flex flex-col items-center flex-1">
-              <span className="text-[18px] md:text-[20px] font-bold text-[#FDFDFD] leading-[32px] md:leading-[34px] tracking-[-0.03em]">{profile.postCount || 0}</span>
-              <span className="text-[12px] md:text-[16px] font-normal text-[#A4A7AE] leading-[16px] md:leading-[30px]">Posts</span>
+              <span className="text-[16px] md:text-[20px] font-bold text-[#FDFDFD] leading-[32px] md:leading-[34px] tracking-[-0.03em]">{profile.postCount || 0}</span>
+              <span className="text-[12px] md:text-[16px] font-normal text-[#A4A7AE] leading-[16px] md:leading-[30px]">Post</span>
             </div>
-            <div className="w-px h-[50px] md:h-[66px] bg-[#181D27]"></div>
+
+            <div className="w-px h-[40px] md:h-[66px] bg-[#181D27]"></div>
             
-            <div className="flex flex-col items-center flex-1">
-              <span className="text-[18px] md:text-[20px] font-bold text-[#FDFDFD] leading-[32px] md:leading-[34px] tracking-[-0.03em]">{profile.followersCount || 0}</span>
+            <button 
+              onClick={() => { setFollowModalType('followers'); setIsFollowModalOpen(true); }}
+              className="flex flex-col items-center flex-1 cursor-pointer group hover:opacity-80 transition-opacity"
+            >
+              <span className="text-[16px] md:text-[20px] font-bold text-[#FDFDFD] leading-[32px] md:leading-[34px] tracking-[-0.03em] group-hover:underline">{profile.followersCount || 0}</span>
               <span className="text-[12px] md:text-[16px] font-normal text-[#A4A7AE] leading-[16px] md:leading-[30px]">Followers</span>
-            </div>
-            <div className="w-px h-[50px] md:h-[66px] bg-[#181D27]"></div>
+            </button>
+
+            <div className="w-px h-[40px] md:h-[66px] bg-[#181D27]"></div>
+            
+            <button 
+              onClick={() => { setFollowModalType('following'); setIsFollowModalOpen(true); }}
+              className="flex flex-col items-center flex-1 cursor-pointer group hover:opacity-80 transition-opacity"
+            >
+              <span className="text-[16px] md:text-[20px] font-bold text-[#FDFDFD] leading-[32px] md:leading-[34px] tracking-[-0.03em] group-hover:underline">{profile.followingCount || 0}</span>
+              <span className="text-[12px] md:text-[16px] font-normal text-[#A4A7AE] leading-[16px] md:leading-[30px]">Following</span>
+            </button>
+
+            <div className="w-px h-[40px] md:h-[66px] bg-[#181D27]"></div>
             
             <div className="flex flex-col items-center flex-1">
-              <span className="text-[18px] md:text-[20px] font-bold text-[#FDFDFD] leading-[32px] md:leading-[34px] tracking-[-0.03em]">{profile.followingCount || 0}</span>
-              <span className="text-[12px] md:text-[16px] font-normal text-[#A4A7AE] leading-[16px] md:leading-[30px]">Following</span>
+              <span className="text-[16px] md:text-[20px] font-bold text-[#FDFDFD] leading-[32px] md:leading-[34px] tracking-[-0.03em]">{profile.likesCount || 0}</span>
+              <span className="text-[12px] md:text-[16px] font-normal text-[#A4A7AE] leading-[16px] md:leading-[30px]">Likes</span>
             </div>
           </div>
         </div>
@@ -298,7 +360,8 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
                     fill 
                     className="object-cover"
                     sizes="(max-width: 768px) 33vw, 268px"
-                    priority={index < 3} 
+                    priority={false}
+                    loading={index < 3 ? "eager" : "lazy"} 
                   />
                 </Link>
               ))}
@@ -308,6 +371,12 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
         </div>
       </div>
 
+      <FollowListModal 
+        isOpen={isFollowModalOpen} 
+        onClose={() => setIsFollowModalOpen(false)} 
+        type={followModalType} 
+        username={profile.username}
+      />
     </div>
   );
 }
