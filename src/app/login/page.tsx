@@ -3,49 +3,55 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import Link from 'next/link';
 import Image from 'next/image';
 import axios from 'axios';
-import axiosInstance from '@/lib/axios';
 import { toast } from 'sonner';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
+import { useMutation } from '@tanstack/react-query';
+import { useDispatch } from 'react-redux';
+import { setCredentials } from '@/store/authSlice';
+import { loginSchema, LoginFormData } from '@/lib/validations/auth'; 
 
-
-const loginSchema = z.object({
-  email: z.string().email("Email tidak valid"),
-  password: z.string().min(6, "Password minimal 6 karakter"),
-});
-
-type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const form = useForm<LoginForm>({
+  const router = useRouter();
+  const dispatch = useDispatch();
+
+  const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    }
   });
 
-  const onSubmit = async (data: LoginForm) => {
-    setIsLoading(true);
-    try {
-      const response = await axiosInstance.post('/auth/login', {
-        email: data.email,
-        password: data.password,
-      });
-      localStorage.setItem('token', response.data.data.token);
+  const loginMutation = useMutation({
+    mutationFn: async (data: LoginFormData) => {
+      const response = await api.post('/auth/login', data);
+      return response.data?.data; 
+    },
+    onSuccess: (data) => {
+      dispatch(setCredentials({
+        user: data.user,
+        token: data.token
+      }));
       toast.success("Welcome Back! Login Berhasil.");
-      window.location.assign('/');
-    } catch (error: unknown) {
+      router.push('/');
+    },
+    onError: (error: unknown) => {
+      let message = "Login gagal, cek kembali email/password";
       if (axios.isAxiosError(error)) {
-        const message = error.response?.data?.message || "Login gagal, cek kembali email/password";
-        toast.error(message);
-      } else {
-        toast.error("Terjadi kesalahan yang tidak diketahui");
+        message = error.response?.data?.message || message;
       }
-    } finally {
-      setIsLoading(false);
+      toast.error(message);
     }
+  });
+  const onSubmit = (data: LoginFormData) => {
+    loginMutation.mutate(data);
   };
 
   return (
@@ -70,7 +76,7 @@ export default function LoginPage() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="w-[313px] md:w-[398px] flex flex-col gap-[20px]">
           <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Email</label>
-            <div className="flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
+            <div className={`flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border rounded-[12px] transition-colors ${form.formState.errors.email ? 'border-[#B41759]' : 'border-[#181D27] focus-within:border-[#7F51F9]'}`}>
               <input
                 {...form.register("email")}
                 type="email"
@@ -79,13 +85,13 @@ export default function LoginPage() {
               />
             </div>
             {form.formState.errors.email && (
-              <span className="text-sm text-red-500 mt-1">{form.formState.errors.email.message}</span>
+              <span className="text-[14px] font-medium text-[#B41759] mt-1">{form.formState.errors.email.message}</span>
             )}
           </div>
 
           <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Password</label>
-            <div className="relative flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
+            <div className={`relative flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border rounded-[12px] transition-colors ${form.formState.errors.password ? 'border-[#B41759]' : 'border-[#181D27] focus-within:border-[#7F51F9]'}`}>
               <input
                 {...form.register("password")}
                 type={showPassword ? "text" : "password"}
@@ -101,17 +107,17 @@ export default function LoginPage() {
               </button>
             </div>
             {form.formState.errors.password && (
-              <span className="text-sm text-red-500 mt-1">{form.formState.errors.password.message}</span>
+              <span className="text-[14px] font-medium text-[#B41759] mt-1">{form.formState.errors.password.message}</span>
             )}
           </div>
 
           <div className="flex flex-col gap-[16px] w-full">
             <button 
               type="submit"
-              disabled={isLoading}
-              className="flex justify-center items-center w-full h-[44px] md:h-[48px] p-[8px] gap-[8px] bg-[#6936F2] hover:bg-[#522BC8] disabled:opacity-50 disabled:cursor-not-allowed rounded-[100px] text-[16px] font-bold text-[#FDFDFD] leading-[30px] tracking-[-0.02em] font-['SF_Pro'] transition-all hover:shadow-[0_0_17px_rgba(105,54,242,0.6)] cursor-pointer"
+              disabled={loginMutation.isPending}
+              className={`flex justify-center items-center w-full h-[44px] md:h-[48px] p-[8px] gap-[8px] rounded-[100px] text-[16px] font-bold text-[#FDFDFD] leading-[30px] tracking-[-0.02em] font-['SF_Pro'] transition-all cursor-pointer ${loginMutation.isPending ? 'bg-[#181D27] text-[#A4A7AE] cursor-not-allowed' : 'bg-[#6936F2] hover:bg-[#522BC8] hover:shadow-[0_0_17px_rgba(105,54,242,0.6)]'}`}
             >
-              {isLoading ? 'Logging in...' : 'Login'}
+              {loginMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Login'}
             </button>
 
             <div className="flex justify-center items-center gap-[4px] h-[28px] md:h-[30px]">

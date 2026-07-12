@@ -1,28 +1,47 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, UploadCloud, X, User } from "lucide-react";
-import axiosInstance from "@/lib/axios";
+import { api } from "@/lib/api";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
+import { useForm, FieldErrors } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+
+const addPostSchema = z.object({
+  caption: z.string().optional(),
+  photo: z.custom<File>()
+    .refine((file) => file !== undefined && file !== null, "Photo is required")
+    .refine((file) => file instanceof File, "Format foto tidak didukung.")
+    .refine((file) => file?.size <= 5 * 1024 * 1024, "Ukuran foto maksimal 5MB.")
+    .refine(
+      (file) => ["image/jpeg", "image/png", "image/webp", "image/svg+xml"].includes(file?.type),
+      "Format foto tidak didukung."
+    ),
+});
+
+type AddPostForm = z.infer<typeof addPostSchema>;
 
 export default function AddPostPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
 
-  const [caption, setCaption] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // 🚀 FIX: State buat nangkep pesan error di UI form
-  const [errors, setErrors] = useState({
-    photo: "",
-    caption: "",
+  const { user } = useSelector((state: RootState) => state.auth);
+  const userAvatar = user?.avatarUrl || null;
+
+  // 🚀 FIX 3: Gak usah pakai watch()! React Compiler lu bakal sujud syukur.
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<AddPostForm>({
+    resolver: zodResolver(addPostSchema),
   });
 
-  const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
@@ -34,121 +53,75 @@ export default function AddPostPage() {
     setShowToast(true);
   };
 
-  useEffect(() => {
-    const fetchMe = async () => {
-      try {
-        const res = await axiosInstance.get("/me");
-        const data = res.data?.data || {};
-        const profileData = data.profile || data.user || data;
-        setUserAvatar(profileData.avatarUrl || null);
-      } catch (err) {
-        console.error("Failed to load user info", err);
-      }
-    };
-    fetchMe();
-  }, []);
-
-  // Tiap kali user milih foto, reset error foto-nya
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-
-    if (selectedFile.size > 5 * 1024 * 1024) {
-      setErrors((prev) => ({ ...prev, photo: "Ukuran foto maksimal 5MB." }));
+  const processFile = (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
       triggerToast("Ukuran foto maksimal 5MB.", "error");
       return;
-    }
-
-    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/svg+xml"];
-    if (!validTypes.includes(selectedFile.type)) {
-      setErrors((prev) => ({ ...prev, photo: "Format foto tidak didukung." }));
+    } else if (!["image/jpeg", "image/png", "image/webp", "image/svg+xml"].includes(file.type)) {
       triggerToast("Format foto tidak didukung.", "error");
       return;
     }
-
-    setErrors((prev) => ({ ...prev, photo: "" }));
-    setFile(selectedFile);
-    setPreviewUrl(URL.createObjectURL(selectedFile));
+    
+    setValue("photo", file, { shouldValidate: true });
+    if (previewUrl) URL.revokeObjectURL(previewUrl); 
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault(); 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) processFile(selectedFile);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files?.[0];
-    if (!droppedFile) return;
-
-    if (droppedFile.size > 5 * 1024 * 1024) {
-      setErrors((prev) => ({ ...prev, photo: "Ukuran foto maksimal 5MB." }));
-      triggerToast("Ukuran foto maksimal 5MB.", "error");
-      return;
-    }
-
-    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/svg+xml"];
-    if (!validTypes.includes(droppedFile.type)) {
-      setErrors((prev) => ({ ...prev, photo: "Format foto tidak didukung." }));
-      triggerToast("Format foto tidak didukung.", "error");
-      return;
-    }
-
-    setErrors((prev) => ({ ...prev, photo: "" }));
-    setFile(droppedFile);
-    setPreviewUrl(URL.createObjectURL(droppedFile));
+    if (droppedFile) processFile(droppedFile);
   };
 
   const removeFile = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setFile(null);
+    setValue("photo", undefined as unknown as File, { shouldValidate: true });
+    
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleSubmit = async () => {
-    setErrors({ photo: "", caption: "" });
-    let hasError = false;
-    const newErrors = { photo: "", caption: "" };
-
-    // Validasi kosong
-    if (!file) {
-      newErrors.photo = "Photo is required";
-      hasError = true;
-    }
-    
-    if (hasError) {
-      setErrors(newErrors);
-      triggerToast("Pilih foto terlebih dahulu!", "error");
-      return;
-    }
-
-    setIsSubmitting(true);
-    const formData = new FormData();
-    formData.append("image", file as File);
-    if (caption.trim()) {
-      formData.append("caption", caption.trim());
-    }
-
-    try {
-      await axiosInstance.post("/posts", formData, {
+  const postMutation = useMutation({
+    mutationFn: async (data: AddPostForm) => {
+      const formData = new FormData();
+      formData.append("image", data.photo);
+      if (data.caption?.trim()) {
+        formData.append("caption", data.caption.trim());
+      }
+      const response = await api.post("/posts", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+      return response.data;
+    },
+    onSuccess: () => {
       triggerToast("Success Post", "success");
-      
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      
+      queryClient.invalidateQueries({ queryKey: ['myGallery'] });
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] }); 
+
       setTimeout(() => {
-        router.push("/"); 
-        router.refresh();
+        router.push("/");
       }, 1500);
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error("Failed to add post:", error);
       triggerToast("Gagal mengunggah postingan.", "error");
-      // Kalau ada error dari backend, bisa taruh di newErrors.caption atau photo
-    } finally {
-      setIsSubmitting(false);
+    },
+  });
+
+  const onSubmit = (data: AddPostForm) => {
+    postMutation.mutate(data);
+  };
+  const onInvalid = (formErrors: FieldErrors<AddPostForm>) => {
+    if (formErrors.photo) {
+      triggerToast(formErrors.photo.message || "Pilih foto terlebih dahulu!", "error");
     }
   };
 
@@ -166,7 +139,6 @@ export default function AddPostPage() {
         </div>
       )}
 
-      {/* Header Custom Mobile */}
       <div className="md:hidden sticky top-0 z-50 w-full h-[64px] bg-[#000000] border-b border-[#181D27] flex items-center justify-between px-[16px]">
         <div className="flex items-center gap-[8px]">
           <Link href="/" className="p-1 -ml-1 cursor-pointer hover:opacity-80">
@@ -197,17 +169,14 @@ export default function AddPostPage() {
            </span>
         </div>
 
-        <div className="flex flex-col w-full gap-[16px]">
-          
-          {/* Upload Photo Section */}
-          {/* 🚀 FIX: Tambahin State Error di sini */}
+        <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="flex flex-col w-full gap-[16px]">
           <div className="flex flex-col gap-[6px] w-full">
             <label className="text-[14px] font-bold text-[#FDFDFD] leading-[28px] tracking-[-0.02em]">
               Photo
             </label>
             
             <div
-              onDragOver={handleDragOver}
+              onDragOver={(e) => e.preventDefault()}
               onDrop={handleDrop}
               onClick={() => !previewUrl && fileInputRef.current?.click()}
               className={`relative flex flex-col items-center justify-center w-full md:w-[452px] h-[144px] bg-[#0A0D12] rounded-[12px] p-[16px_24px] transition-colors overflow-hidden ${previewUrl ? 'border border-[#181D27]' : `border border-dashed cursor-pointer hover:border-[#7F51F9] ${errors.photo ? 'border-[#B41759]' : 'border-[#181D27]'}`}`}
@@ -216,6 +185,7 @@ export default function AddPostPage() {
                 <>
                   <Image src={previewUrl} alt="Preview" fill className="object-contain bg-black/50" />
                   <button 
+                    type="button"
                     onClick={removeFile}
                     className="absolute top-2 right-2 w-[32px] h-[32px] bg-black/70 rounded-full flex justify-center items-center hover:bg-black transition-colors"
                   >
@@ -240,10 +210,9 @@ export default function AddPostPage() {
               )}
             </div>
             
-            {/* Munculin teks merah kalau ada error */}
-            {errors.photo && (
+            {errors.photo?.message && (
               <span className="text-[14px] font-medium text-[#B41759] leading-[28px] tracking-[-0.03em]">
-                {errors.photo}
+                {errors.photo.message as string}
               </span>
             )}
             
@@ -256,36 +225,30 @@ export default function AddPostPage() {
             />
           </div>
 
-          {/* Caption Section */}
-          {/* 🚀 FIX: State Error Caption */}
           <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FDFDFD] leading-[28px] tracking-[-0.02em]">
               Caption
             </label>
             <div className={`flex w-full md:w-[452px] h-[101px] bg-[#0A0D12] border rounded-[12px] p-[8px_16px] transition-colors ${errors.caption ? 'border-[#B41759]' : 'border-[#181D27] focus-within:border-[#7F51F9]'}`}>
               <textarea
-                value={caption}
-                onChange={(e) => {
-                  setCaption(e.target.value);
-                  if (errors.caption) setErrors(prev => ({...prev, caption: ""}));
-                }}
+                {...register("caption")}
                 placeholder="Create your caption"
                 className="w-full h-full bg-transparent border-none outline-none text-[16px] font-normal text-[#FDFDFD] leading-[30px] tracking-[-0.02em] placeholder-[#535862] resize-none"
               />
             </div>
-            {errors.caption && (
+            {errors.caption?.message && (
               <span className="text-[14px] font-medium text-[#B41759] leading-[28px] tracking-[-0.03em]">
-                {errors.caption}
+                {errors.caption.message as string}
               </span>
             )}
           </div>
 
           <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className={`flex justify-center items-center w-full md:w-[452px] h-[40px] md:h-[48px] rounded-[100px] transition-colors cursor-pointer shrink-0 mt-[8px] ${isSubmitting ? "bg-[#181D27] text-[#A4A7AE] cursor-not-allowed" : "bg-[#6936F2] hover:bg-[#522BC8] text-[#FDFDFD]"}`}
+            type="submit"
+            disabled={postMutation.isPending}
+            className={`flex justify-center items-center w-full md:w-[452px] h-[40px] md:h-[48px] rounded-[100px] transition-colors cursor-pointer shrink-0 mt-[8px] ${postMutation.isPending ? "bg-[#181D27] text-[#A4A7AE] cursor-not-allowed" : "bg-[#6936F2] hover:bg-[#522BC8] text-[#FDFDFD]"}`}
           >
-            {isSubmitting ? (
+            {postMutation.isPending ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               <span className="text-[14px] md:text-[16px] font-bold leading-[28px] md:leading-[30px] tracking-[-0.01em] md:tracking-[-0.02em]">
@@ -294,7 +257,7 @@ export default function AddPostPage() {
             )}
           </button>
           
-        </div>
+        </form>
       </div>
     </div>
   );

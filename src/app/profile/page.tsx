@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link'; 
 import { Grid3X3, Bookmark, Send, ArrowLeft, Loader2, User } from 'lucide-react';
-import axiosInstance from '@/lib/axios';
 import { toast } from 'sonner';
 import FollowListModal from '@/components/features/FollowListModal';
+import { api } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
+import { useDispatch } from 'react-redux';
+import { updateUserProfile } from '@/store/authSlice';
 
 interface UserProfile {
   id: number;
@@ -26,54 +29,19 @@ interface PostItem {
 }
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [posts, setPosts] = useState<PostItem[]>([]);
-  const [savedPosts, setSavedPosts] = useState<PostItem[]>([]);
-  // 🚀 FIX: Kembalikan jadi 2 Tab aja (Gallery & Saved)
+  const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState<'gallery' | 'saved'>('gallery');
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-  const [isLoadingContent, setIsLoadingContent] = useState(true);
-
   const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
   const [followModalType, setFollowModalType] = useState<'followers' | 'following'>('followers');
-   
-  const fetchGallery = useCallback(async () => {
-    setIsLoadingContent(true);
-    try {
-      const res = await axiosInstance.get(`/me/posts?page=1&limit=50&t=${Date.now()}`);
-      const payload = res.data?.data || res.data;
-      const dataArray = payload?.posts || payload?.items || [];
-      setPosts(Array.isArray(dataArray) ? dataArray : []);
-    } catch (error) {
-      console.error('Fetch gallery error:', error);
-    } finally {
-      setIsLoadingContent(false);
-    }
-  }, []);
-
-  const fetchSaved = useCallback(async () => {
-    setIsLoadingContent(true);
-    try {
-      const res = await axiosInstance.get(`/me/saved?page=1&limit=50&t=${Date.now()}`);
-      const payload = res.data?.data || res.data;
-      const dataArray = payload?.posts || payload?.items || payload?.saved || [];
-      setSavedPosts(Array.isArray(dataArray) ? dataArray : []);
-    } catch (error) {
-      console.error('Fetch saved error:', error);
-      toast.error('Gagal memuat daftar tersimpan');
-    } finally {
-      setIsLoadingContent(false);
-    }
-  }, []);
-
-  const fetchProfileData = useCallback(async () => {
-    try {
+  const { data: profile, isLoading: isLoadingProfile, refetch: refetchProfile } = useQuery({
+    queryKey: ['myProfile'],
+    queryFn: async () => {
       const [profileRes, followersRes, followingRes, postsRes, likesRes] = await Promise.all([
-        axiosInstance.get(`/me?t=${Date.now()}`),
-        axiosInstance.get(`/me/followers?t=${Date.now()}`).catch(() => ({ data: { data: [] } })),
-        axiosInstance.get(`/me/following?t=${Date.now()}`).catch(() => ({ data: { data: [] } })),
-        axiosInstance.get(`/me/posts?t=${Date.now()}`).catch(() => ({ data: { data: [] } })),
-        axiosInstance.get(`/me/likes?t=${Date.now()}`).catch(() => ({ data: { data: [] } }))
+        api.get(`/me`),
+        api.get(`/me/followers`).catch(() => ({ data: { data: [] } })),
+        api.get(`/me/following`).catch(() => ({ data: { data: [] } })),
+        api.get(`/me/posts`).catch(() => ({ data: { data: [] } })),
+        api.get(`/me/likes`).catch(() => ({ data: { data: [] } }))
       ]);
 
       const data = profileRes.data?.data || {};
@@ -84,46 +52,60 @@ export default function ProfilePage() {
       const postsArray = postsRes.data?.data?.posts || postsRes.data?.data?.items || postsRes.data?.data || [];
       const likesArray = likesRes.data?.data?.likes || likesRes.data?.data?.posts || likesRes.data?.data || [];
 
-      setProfile({
+      const formattedProfile: UserProfile = {
         id: profileData.id,
         name: profileData.name || profileData.username,
         username: profileData.username,
         avatarUrl: profileData.avatarUrl || null,
         bio: profileData.bio || '',
-        
         postCount: Array.isArray(postsArray) ? postsArray.length : 0,
         followersCount: Array.isArray(followersArray) ? followersArray.length : 0,
         followingCount: Array.isArray(followingArray) ? followingArray.length : 0,
         likesCount: Array.isArray(likesArray) ? likesArray.length : 0,
-      });
-    } catch (error) {
-      console.error('Fetch profile error:', error);
-      toast.error('Gagal memuat profil');
-    }
-  }, []);
+      };
+
+      dispatch(updateUserProfile({
+        name: formattedProfile.name,
+        avatarUrl: formattedProfile.avatarUrl,
+      }));
+
+      return formattedProfile;
+    },
+    refetchOnWindowFocus: false,
+  });
+
+  const { data: posts = [], isLoading: isLoadingGallery, refetch: refetchGallery } = useQuery({
+    queryKey: ['myGallery'],
+    queryFn: async () => {
+      const res = await api.get(`/me/posts?page=1&limit=50`);
+      const payload = res.data?.data || res.data;
+      const dataArray = payload?.posts || payload?.items || [];
+      return (Array.isArray(dataArray) ? dataArray : []) as PostItem[];
+    },
+    enabled: activeTab === 'gallery', 
+    refetchOnWindowFocus: false,
+  });
+
+  const { data: savedPosts = [], isLoading: isLoadingSaved } = useQuery({
+    queryKey: ['mySavedPosts'],
+    queryFn: async () => {
+      const res = await api.get(`/me/saved?page=1&limit=50`);
+      const payload = res.data?.data || res.data;
+      const dataArray = payload?.posts || payload?.items || payload?.saved || [];
+      return (Array.isArray(dataArray) ? dataArray : []) as PostItem[];
+    },
+    enabled: activeTab === 'saved', 
+    refetchOnWindowFocus: false,
+  });
 
   useEffect(() => {
-    const loadInitialData = async () => {
-      await fetchProfileData();
-      setIsLoadingProfile(false);
-      fetchGallery();
-    };
-    loadInitialData();
-
     const handleProfileUpdate = () => {
-      fetchProfileData(); 
+      refetchProfile(); 
+      refetchGallery();
     };
     window.addEventListener("profileUpdated", handleProfileUpdate);
-
     return () => window.removeEventListener("profileUpdated", handleProfileUpdate);
-  }, [fetchProfileData, fetchGallery]);
-
-  const handleTabChange = (tab: 'gallery' | 'saved') => {
-    if (tab === activeTab) return; 
-    setActiveTab(tab);  
-    if (tab === 'gallery') fetchGallery();
-    else if (tab === 'saved') fetchSaved();
-  };
+  }, [refetchProfile, refetchGallery]);
 
   const handleShareProfile = async () => {
     if (!profile) return;
@@ -142,7 +124,6 @@ export default function ProfilePage() {
       console.error(err);
     }
   };
-
   if (isLoadingProfile) {
     return (
       <div className="min-h-screen bg-[#000000] flex justify-center items-center">
@@ -150,7 +131,6 @@ export default function ProfilePage() {
       </div>
     );
   }
-  
   if (!profile) {
     return (
       <div className="min-h-screen bg-[#000000] flex justify-center items-center text-white">
@@ -160,6 +140,7 @@ export default function ProfilePage() {
   }
   
   const currentContent = activeTab === 'gallery' ? posts : savedPosts;
+  const isLoadingContent = activeTab === 'gallery' ? isLoadingGallery : isLoadingSaved;
 
   return (
     <div className="min-h-screen bg-[#000000] text-white font-['SF_Pro'] relative pb-[100px] md:pb-0">
@@ -271,17 +252,16 @@ export default function ProfilePage() {
         </div>
 
         <div className="flex flex-col w-full gap-[24px]">
-          {/* 🚀 FIX: Tab Liked dihapus, sisa 2 tab flex-1 biar ngebelah 2 persis Figma */}
           <div className="flex flex-row items-center w-full">
             <button 
-              onClick={() => handleTabChange('gallery')}
+              onClick={() => setActiveTab('gallery')}
               className={`flex-1 flex justify-center items-center gap-[8px] md:gap-[12px] h-[48px] transition-colors cursor-pointer ${activeTab === 'gallery' ? 'border-b-[2px] border-[#FDFDFD] text-[#FDFDFD]' : 'border-b border-[#181D27] text-[#A4A7AE] hover:text-[#FDFDFD]'}`}
             >
               <Grid3X3 className="w-[20px] h-[20px] md:w-[24px] md:h-[24px]" />
               <span className={`text-[14px] md:text-[16px] leading-[28px] md:leading-[30px] ${activeTab === 'gallery' ? 'font-bold tracking-[-0.01em]' : 'font-medium'}`}>Gallery</span>
             </button>
             <button 
-              onClick={() => handleTabChange('saved')}
+              onClick={() => setActiveTab('saved')}
               className={`flex-1 flex justify-center items-center gap-[8px] md:gap-[12px] h-[48px] transition-colors cursor-pointer ${activeTab === 'saved' ? 'border-b-[2px] border-[#FDFDFD] text-[#FDFDFD]' : 'border-b border-[#181D27] text-[#A4A7AE] hover:text-[#FDFDFD]'}`}
             >
               <Bookmark className="w-[20px] h-[20px] md:w-[24px] md:h-[24px]" />

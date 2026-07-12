@@ -8,9 +8,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import axiosInstance from '@/lib/axios';
 import { toast } from 'sonner';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { api } from '@/lib/api';
+import { useMutation } from '@tanstack/react-query';
 
 
 const registerSchema = z.object({
@@ -29,39 +30,38 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
   });
 
-  const onSubmit = async (data: RegisterForm) => {
-    setIsLoading(true);
-    try {
-      await axiosInstance.post('/auth/register', {
+  const registerMutation = useMutation({
+    mutationFn: async (data: RegisterForm) => {
+      const response = await api.post('/auth/register', {
         name: data.name,
         username: data.username,
         phone: data.phone,
         email: data.email,
         password: data.password,
       });
-      
+      return response.data;
+    },
+    onSuccess: () => {
       toast.success("Registrasi Berhasil! Silakan Login.");
       router.push('/login'); 
-    } catch (error: unknown) {
+    },
+    onError: (error: unknown) => {
+      let message = "Gagal Register, cek kembali data lu.";
       if (axios.isAxiosError(error)) {
-        const message = error.response?.data?.message || "Gagal Register, cek kembali data lu.";
-        toast.error(message);
-      } else {
-        toast.error("Terjadi kesalahan yang tidak diketahui");
+        message = error.response?.data?.message || message;
       }
-    } finally {
-      setIsLoading(false);
+      toast.error(message);
     }
+  });
+  const onSubmit = (data: RegisterForm) => {
+    registerMutation.mutate(data);
   };
-
 
   return (
     <div 
@@ -85,31 +85,31 @@ export default function RegisterPage() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="w-[313px] md:w-[475px] flex flex-col gap-[16px] md:gap-[20px]">
           <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Name</label>
-            <div className="flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
+            <div className={`flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border rounded-[12px] transition-colors ${form.formState.errors.name ? 'border-[#B41759]' : 'border-[#181D27] focus-within:border-[#7F51F9]'}`}>
               <input
                 {...form.register("name")}
                 placeholder="Enter your name"
                 className="w-full bg-transparent text-[16px] text-[#FFFFFF] leading-[30px] tracking-[-0.02em] placeholder:text-[#535862] outline-none font-['SF_Pro']"
               />
             </div>
-            {form.formState.errors.name && <span className="text-sm text-red-500">{form.formState.errors.name.message}</span>}
+            {form.formState.errors.name && <span className="text-[14px] font-medium text-[#B41759] mt-1">{form.formState.errors.name.message}</span>}
           </div>
 
           <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Username</label>
-            <div className="flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
+            <div className={`flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border rounded-[12px] transition-colors ${form.formState.errors.username ? 'border-[#B41759]' : 'border-[#181D27] focus-within:border-[#7F51F9]'}`}>
               <input
                 {...form.register("username")}
                 placeholder="Enter your username"
                 className="w-full bg-transparent text-[16px] text-[#FFFFFF] leading-[30px] tracking-[-0.02em] placeholder:text-[#535862] outline-none font-['SF_Pro']"
               />
             </div>
-            {form.formState.errors.username && <span className="text-sm text-red-500">{form.formState.errors.username.message}</span>}
+            {form.formState.errors.username && <span className="text-[14px] font-medium text-[#B41759] mt-1">{form.formState.errors.username.message}</span>}
           </div>
 
           <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Number Phone</label>
-            <div className="flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
+            <div className={`flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border rounded-[12px] transition-colors ${form.formState.errors.phone ? 'border-[#B41759]' : 'border-[#181D27] focus-within:border-[#7F51F9]'}`}>
               <input
                 {...form.register("phone")}
                 type="tel"
@@ -117,12 +117,12 @@ export default function RegisterPage() {
                 className="w-full bg-transparent text-[16px] text-[#FFFFFF] leading-[30px] tracking-[-0.02em] placeholder:text-[#535862] outline-none font-['SF_Pro']"
               />
             </div>
-            {form.formState.errors.phone && <span className="text-sm text-red-500">{form.formState.errors.phone.message}</span>}
+            {form.formState.errors.phone && <span className="text-[14px] font-medium text-[#B41759] mt-1">{form.formState.errors.phone.message}</span>}
           </div>
 
           <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Email</label>
-            <div className="flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
+            <div className={`flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border rounded-[12px] transition-colors ${form.formState.errors.email ? 'border-[#B41759]' : 'border-[#181D27] focus-within:border-[#7F51F9]'}`}>
               <input
                 {...form.register("email")}
                 type="email"
@@ -130,12 +130,12 @@ export default function RegisterPage() {
                 className="w-full bg-transparent text-[16px] text-[#FFFFFF] leading-[30px] tracking-[-0.02em] placeholder:text-[#535862] outline-none font-['SF_Pro']"
               />
             </div>
-            {form.formState.errors.email && <span className="text-sm text-red-500">{form.formState.errors.email.message}</span>}
+            {form.formState.errors.email && <span className="text-[14px] font-medium text-[#B41759] mt-1">{form.formState.errors.email.message}</span>}
           </div>
 
           <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Password</label>
-            <div className="relative flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
+            <div className={`relative flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border rounded-[12px] transition-colors ${form.formState.errors.password ? 'border-[#B41759]' : 'border-[#181D27] focus-within:border-[#7F51F9]'}`}>
               <input
                 {...form.register("password")}
                 type={showPassword ? "text" : "password"}
@@ -150,12 +150,12 @@ export default function RegisterPage() {
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
-            {form.formState.errors.password && <span className="text-sm text-red-500">{form.formState.errors.password.message}</span>}
+            {form.formState.errors.password && <span className="text-[14px] font-medium text-[#B41759] mt-1">{form.formState.errors.password.message}</span>}
           </div>
 
           <div className="flex flex-col gap-[2px] w-full">
             <label className="text-[14px] font-bold text-[#FFFFFF] leading-[28px] tracking-[-0.02em] font-['SF_Pro']">Confirm Password</label>
-            <div className="relative flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border border-[#181D27] rounded-[12px] focus-within:border-[#7F51F9] transition-colors">
+            <div className={`relative flex items-center w-full h-[48px] p-[8px_16px] gap-[8px] bg-[#0A0D12] border rounded-[12px] transition-colors ${form.formState.errors.confirmPassword ? 'border-[#B41759]' : 'border-[#181D27] focus-within:border-[#7F51F9]'}`}>
               <input
                 {...form.register("confirmPassword")}
                 type={showConfirmPassword ? "text" : "password"}
@@ -170,16 +170,16 @@ export default function RegisterPage() {
                 {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
-            {form.formState.errors.confirmPassword && <span className="text-sm text-red-500">{form.formState.errors.confirmPassword.message}</span>}
+            {form.formState.errors.confirmPassword && <span className="text-[14px] font-medium text-[#B41759] mt-1">{form.formState.errors.confirmPassword.message}</span>}
           </div>
 
           <div className="flex flex-col gap-[16px] w-full mt-2">
             <button 
               type="submit"
-              disabled={isLoading}
-              className="flex justify-center items-center w-full h-[48px] p-[8px] gap-[8px] bg-[#6936F2] hover:bg-[#522BC8] disabled:opacity-50 disabled:cursor-not-allowed rounded-[100px] text-[16px] font-bold text-[#FDFDFD] leading-[30px] tracking-[-0.02em] font-['SF_Pro'] transition-colors hover:shadow-[0_0_17px_rgba(105,54,242,0.6)] cursor-pointer"
+              disabled={registerMutation.isPending}
+              className={`flex justify-center items-center w-full h-[48px] p-[8px] gap-[8px] rounded-[100px] text-[16px] font-bold text-[#FDFDFD] leading-[30px] tracking-[-0.02em] font-['SF_Pro'] transition-colors cursor-pointer ${registerMutation.isPending ? 'bg-[#181D27] text-[#A4A7AE] cursor-not-allowed' : 'bg-[#6936F2] hover:bg-[#522BC8] hover:shadow-[0_0_17px_rgba(105,54,242,0.6)]'}`}
             >
-              {isLoading ? 'Submitting...' : 'Submit'}
+              {registerMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Submit'}
             </button>
 
             <div className="flex justify-center items-center gap-[4px] h-[30px]">
@@ -187,7 +187,7 @@ export default function RegisterPage() {
                 Already have an account?
               </span>
               <Link href="/login" className="text-[14px] md:text-[16px] font-bold text-[#7F51F9] leading-[28px] md:leading-[30px] tracking-[-0.01em] font-['SF_Pro'] hover:underline">
-                Log in
+                Login
               </Link>
             </div>
           </div>

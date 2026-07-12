@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState, useEffect, use, useCallback } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import Image from 'next/image';
 import Link from 'next/link'; 
 import { useRouter } from 'next/navigation';
 import { Grid3X3, Heart, ArrowLeft, Loader2, User, Send, CheckCircle } from 'lucide-react';
-import axiosInstance from '@/lib/axios';
 import { toast } from 'sonner';
 import FollowListModal from '@/components/features/FollowListModal';
+import { api } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface UserProfile {
   id: number;
@@ -30,137 +31,116 @@ interface PostItem {
 export default function FriendProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = use(params);
   const router = useRouter();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [posts, setPosts] = useState<PostItem[]>([]);
-  const [likedPosts, setLikedPosts] = useState<PostItem[]>([]);
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'gallery' | 'liked'>('gallery');
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-  const [isLoadingContent, setIsLoadingContent] = useState(true);
-  const [isFollowLoading, setIsFollowLoading] = useState(false);
-
   const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
   const [followModalType, setFollowModalType] = useState<'followers' | 'following'>('followers');
 
-  const fetchGallery = useCallback(async () => {
-    setIsLoadingContent(true);
-    try {
-      const res = await axiosInstance.get(`/users/${username}/posts?page=1&limit=50&t=${Date.now()}`);
+  const { data: profile, isLoading: isLoadingProfile, refetch: refetchProfile } = useQuery({
+    queryKey: ['userProfile', username],
+    queryFn: async () => {
+      try {
+        const [profileRes, followersRes, followingRes, postsRes, likesRes] = await Promise.all([
+          api.get(`/users/${username}`),
+          api.get(`/users/${username}/followers`).catch(() => ({ data: { data: [] } })),
+          api.get(`/users/${username}/following`).catch(() => ({ data: { data: [] } })),
+          api.get(`/users/${username}/posts`).catch(() => ({ data: { data: [] } })),
+          api.get(`/users/${username}/likes`).catch(() => ({ data: { data: [] } }))
+        ]);
+
+        const data = profileRes.data?.data || {};
+        const profileData = data.profile || data.user || data;
+        const followersArray = followersRes.data?.data?.users || followersRes.data?.data?.followers || followersRes.data?.data || [];
+        const followingArray = followingRes.data?.data?.users || followingRes.data?.data?.following || followingRes.data?.data || [];
+        const postsArray = postsRes.data?.data?.posts || postsRes.data?.data?.items || postsRes.data?.data || [];
+        const likesArray = likesRes.data?.data?.likes || likesRes.data?.data?.posts || likesRes.data?.data || [];
+
+        return {
+          id: profileData.id,
+          name: profileData.name || profileData.username,
+          username: profileData.username,
+          avatarUrl: profileData.avatarUrl || null,
+          bio: profileData.bio || '',
+          postCount: Array.isArray(postsArray) ? postsArray.length : 0,
+          followersCount: Array.isArray(followersArray) ? followersArray.length : 0,
+          followingCount: Array.isArray(followingArray) ? followingArray.length : 0,
+          likesCount: Array.isArray(likesArray) ? likesArray.length : 0,
+          isFollowing: profileData.isFollowing || false,
+        } as UserProfile;
+      } catch (error) {
+        toast.error('Profil tidak ditemukan');
+        router.push('/');
+        throw error;
+      }
+    },
+    refetchOnWindowFocus: false,
+  });
+
+  const followMutation = useMutation({
+    mutationFn: async (isCurrentlyFollowing: boolean) => {
+      if (isCurrentlyFollowing) {
+        await api.delete(`/follow/${username}`);
+      } else {
+        await api.post(`/follow/${username}`);
+      }
+    },
+    onMutate: async (isCurrentlyFollowing) => {
+      await queryClient.cancelQueries({ queryKey: ['userProfile', username] });
+      const previousProfile = queryClient.getQueryData(['userProfile', username]);
+      queryClient.setQueryData(['userProfile', username], (old: UserProfile | undefined) => {
+        if (!old) return old;
+        return {
+          ...old,
+          isFollowing: !isCurrentlyFollowing,
+          followersCount: isCurrentlyFollowing ? old.followersCount - 1 : old.followersCount + 1,
+        };
+      });
+
+      return { previousProfile };
+    },
+    onError: (err, newFollowState, context) => {
+      queryClient.setQueryData(['userProfile', username], context?.previousProfile);
+      toast.error('Gagal memproses aksi');
+      console.error('Follow toggle error:', err);
+    },
+    onSettled: () => {
+      window.dispatchEvent(new Event("profileUpdated"));
+    }
+  });
+
+  const { data: posts = [], isLoading: isLoadingGallery, refetch: refetchGallery } = useQuery({
+    queryKey: ['userGallery', username],
+    queryFn: async () => {
+      const res = await api.get(`/users/${username}/posts?page=1&limit=50`);
       const payload = res.data?.data || res.data;
       const dataArray = payload?.posts || payload?.items || [];
-      setPosts(Array.isArray(dataArray) ? dataArray : []);
-    } catch (error) {
-      console.error('Fetch gallery error:', error);
-    } finally {
-      setIsLoadingContent(false);
-    }
-  }, [username]);
+      return (Array.isArray(dataArray) ? dataArray : []) as PostItem[];
+    },
+    enabled: activeTab === 'gallery',
+    refetchOnWindowFocus: false,
+  });
 
-  const fetchLiked = useCallback(async () => {
-    setIsLoadingContent(true);
-    try {
-      const res = await axiosInstance.get(`/users/${username}/likes?page=1&limit=50&t=${Date.now()}`);
+  // 🚀 FIX 5: Fetch Liked Posts
+  const { data: likedPosts = [], isLoading: isLoadingLiked } = useQuery({
+    queryKey: ['userLiked', username],
+    queryFn: async () => {
+      const res = await api.get(`/users/${username}/likes?page=1&limit=50`);
       const payload = res.data?.data || res.data;
       const dataArray = payload?.posts || payload?.items || payload?.likes || [];
-      setLikedPosts(Array.isArray(dataArray) ? dataArray : []);
-    } catch (error) {
-      console.error('Fetch liked error:', error);
-    } finally {
-      setIsLoadingContent(false);
-    }
-  }, [username]);
-
-  const fetchProfileData = useCallback(async () => {
-    try {
-      const [profileRes, followersRes, followingRes, postsRes, likesRes] = await Promise.all([
-        axiosInstance.get(`/users/${username}`),
-        axiosInstance.get(`/users/${username}/followers`).catch(() => ({ data: { data: [] } })),
-        axiosInstance.get(`/users/${username}/following`).catch(() => ({ data: { data: [] } })),
-        axiosInstance.get(`/users/${username}/posts`).catch(() => ({ data: { data: [] } })),
-        axiosInstance.get(`/users/${username}/likes`).catch(() => ({ data: { data: [] } }))
-      ]);
-
-      const data = profileRes.data?.data || {};
-      const profileData = data.profile || data.user || data;
-
-      const followersArray = followersRes.data?.data?.users || followersRes.data?.data?.followers || followersRes.data?.data || [];
-      const followingArray = followingRes.data?.data?.users || followingRes.data?.data?.following || followingRes.data?.data || [];
-      const postsArray = postsRes.data?.data?.posts || postsRes.data?.data?.items || postsRes.data?.data || [];
-      const likesArray = likesRes.data?.data?.likes || likesRes.data?.data?.posts || likesRes.data?.data || [];
-
-      setProfile({
-        id: profileData.id,
-        name: profileData.name || profileData.username,
-        username: profileData.username,
-        avatarUrl: profileData.avatarUrl || null,
-        bio: profileData.bio || '',
-        
-        postCount: Array.isArray(postsArray) ? postsArray.length : 0,
-        followersCount: Array.isArray(followersArray) ? followersArray.length : 0,
-        followingCount: Array.isArray(followingArray) ? followingArray.length : 0,
-        likesCount: Array.isArray(likesArray) ? likesArray.length : 0,
-        
-        isFollowing: profileData.isFollowing || false,
-      });
-    } catch (error) {
-      console.error('Fetch profile error:', error);
-      toast.error('Profil tidak ditemukan');
-      router.push('/'); 
-    }
-  }, [username, router]);
+      return (Array.isArray(dataArray) ? dataArray : []) as PostItem[];
+    },
+    enabled: activeTab === 'liked',
+    refetchOnWindowFocus: false,
+  });
 
   useEffect(() => {
-    const loadInitialData = async () => {
-      await fetchProfileData();
-      setIsLoadingProfile(false);
-      fetchGallery();
-    };
-    
-    loadInitialData();
-
     const handleProfileUpdate = () => {
-      fetchProfileData(); 
+      refetchProfile(); 
+      refetchGallery();
     };
     window.addEventListener("profileUpdated", handleProfileUpdate);
-
     return () => window.removeEventListener("profileUpdated", handleProfileUpdate);
-  }, [fetchProfileData, fetchGallery]); 
-
-  const handleTabChange = (tab: 'gallery' | 'liked') => {
-    if (tab === activeTab) return; 
-    setActiveTab(tab); 
-    if (tab === 'gallery') {
-      fetchGallery();
-    } else {
-      fetchLiked();
-    }
-  };
-
-  const handleFollowToggle = async () => {
-    if (!profile) return;
-    const previousState = profile.isFollowing;
-    setIsFollowLoading(true);
-    
-    setProfile({ 
-      ...profile, 
-      isFollowing: !previousState, 
-      followersCount: previousState ? profile.followersCount - 1 : profile.followersCount + 1 
-    });
-    
-    try {
-      if (previousState) {
-        await axiosInstance.delete(`/follow/${profile.username}`);
-      } else {
-        await axiosInstance.post(`/follow/${profile.username}`);
-      }
-      window.dispatchEvent(new Event("profileUpdated"));
-    } catch (error) {
-      console.error('Follow toggle error:', error);
-      toast.error('Gagal memproses aksi');
-      setProfile({ ...profile, isFollowing: previousState, followersCount: profile.followersCount });
-    } finally {
-      setIsFollowLoading(false);
-    }
-  };
+  }, [refetchProfile, refetchGallery]);
 
   const handleShareProfile = async () => {
     if (!profile) return;
@@ -188,11 +168,11 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
   if (!profile) return null;
   
   const currentContent = activeTab === 'gallery' ? posts : likedPosts;
+  const isLoadingContent = activeTab === 'gallery' ? isLoadingGallery : isLoadingLiked;
 
   return (
     <div className="min-h-screen bg-[#000000] text-white font-['SF_Pro'] relative pb-[100px] md:pb-0">
       
-      {/* Cuma tampil di Mobile, di Desktop hilang */}
       <div className="md:hidden sticky top-0 z-50 w-full h-[64px] bg-[#000000] border-b border-[#181D27] flex items-center justify-between px-[16px]">
         <div className="flex items-center gap-[8px]">
           <Link href="/" className="p-1 -ml-1 cursor-pointer hover:opacity-80">
@@ -213,7 +193,6 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
       </div>
 
       <div className="flex flex-col items-center w-full max-w-[812px] mx-auto pt-[16px] md:pt-[40px] px-[16px] md:px-0 gap-[24px] md:gap-[40px]">
-        {/* 🚀 FIX: Tombol "Back to Home" versi Desktop resmi dihanguskan sesuai Figma! */}
 
         <div className="flex flex-col w-full gap-[24px]">
           
@@ -244,8 +223,8 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
 
             <div className="flex flex-row items-center gap-[12px] w-full md:w-auto">
               <button 
-                onClick={handleFollowToggle}
-                disabled={isFollowLoading}
+                onClick={() => followMutation.mutate(profile.isFollowing)}
+                disabled={followMutation.isPending}
                 className={`flex justify-center items-center gap-[8px] h-[40px] md:h-[48px] rounded-[100px] transition-colors cursor-pointer flex-1 md:flex-none ${
                   profile.isFollowing 
                     ? 'md:w-[135px] border border-[#181D27] bg-transparent hover:bg-[#181D27]' 
@@ -314,14 +293,14 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userna
         <div className="flex flex-col w-full gap-[24px]">
           <div className="flex flex-row items-center w-full">
             <button 
-              onClick={() => handleTabChange('gallery')}
+              onClick={() => setActiveTab('gallery')}
               className={`flex-1 flex justify-center items-center gap-[8px] md:gap-[12px] h-[48px] transition-colors cursor-pointer ${activeTab === 'gallery' ? 'border-b-[2px] border-[#FDFDFD] text-[#FDFDFD]' : 'border-b border-[#181D27] text-[#A4A7AE] hover:text-[#FDFDFD]'}`}
             >
               <Grid3X3 className="w-[20px] h-[20px] md:w-[24px] md:h-[24px]" />
               <span className={`text-[14px] md:text-[16px] leading-[28px] md:leading-[30px] ${activeTab === 'gallery' ? 'font-bold tracking-[-0.01em]' : 'font-medium'}`}>Gallery</span>
             </button>
             <button 
-              onClick={() => handleTabChange('liked')}
+              onClick={() => setActiveTab('liked')}
               className={`flex-1 flex justify-center items-center gap-[8px] md:gap-[12px] h-[48px] transition-colors cursor-pointer ${activeTab === 'liked' ? 'border-b-[2px] border-[#FDFDFD] text-[#FDFDFD]' : 'border-b border-[#181D27] text-[#A4A7AE] hover:text-[#FDFDFD]'}`}
             >
               <Heart className={`w-[20px] h-[20px] md:w-[24px] md:h-[24px] ${activeTab === 'liked' ? 'fill-[#FDFDFD]' : ''}`} />

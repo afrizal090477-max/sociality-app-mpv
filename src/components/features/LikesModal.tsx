@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { X, CheckCircle, Loader2 } from "lucide-react";
 import Image from "next/image";
 import axios from "axios";
-import axiosInstance from "@/lib/axios";
 import { toast } from "sonner";
+import { api } from "@/lib/api";
+import { useMutation } from "@tanstack/react-query";
 
 export interface LikedUser {
   id: number;
@@ -26,50 +27,48 @@ export default function LikesModal({
   users,
   isLoading,
 }: LikesModalProps) {
-  const [prevUsers, setPrevUsers] = useState<LikedUser[]>(users);
-  const [localUsers, setLocalUsers] = useState<LikedUser[]>(users);
-  if (users !== prevUsers) {
-    setPrevUsers(users);
-    setLocalUsers(users);
-  }
-  if (!isOpen) return null;
+  const [optimisticFollows, setOptimisticFollows] = useState<Record<string, boolean>>({});
 
-  const handleFollowToggle = async (
-    username: string,
-    currentIsFollowing: boolean,
-  ) => {
-    setLocalUsers((prev) =>
-      prev.map((u) =>
-        u.username === username
-          ? { ...u, isFollowing: !currentIsFollowing }
-          : u,
-      ),
-    );
-
-    try {
-      if (currentIsFollowing) {
-        await axiosInstance.delete(`/follow/${username}`);
-        toast.success(`Berhenti mengikuti @${username}`);
+  const followMutation = useMutation({
+    mutationFn: async ({ username, isFollowing }: { username: string; isFollowing: boolean }) => {
+      if (isFollowing) {
+        await api.delete(`/follow/${username}`);
+        return `Berhenti mengikuti @${username}`;
       } else {
-        await axiosInstance.post(`/follow/${username}`);
-        toast.success(`Sekarang mengikuti @${username}`);
+        await api.post(`/follow/${username}`);
+        return `Sekarang mengikuti @${username}`;
       }
-    } catch (err) {
-      console.error("Follow/Unfollow error:", err);
-      setLocalUsers((prev) =>
-        prev.map((u) =>
-          u.username === username
-            ? { ...u, isFollowing: currentIsFollowing }
-            : u,
-        ),
-      );
-      let errorMessage = `Gagal mengubah status follow untuk @${username}`;
+    },
+    onSuccess: (message) => {
+      toast.success(message);
+    },
+    onError: (err, variables) => {
+      setOptimisticFollows((prev) => {
+        const newState = { ...prev };
+        delete newState[variables.username];
+        return newState;
+      });
+      
+      let errorMessage = `Gagal mengubah status follow untuk @${variables.username}`;
       if (axios.isAxiosError(err)) {
         errorMessage = err.response?.data?.message || errorMessage;
       }
       toast.error(errorMessage);
     }
+  });
+
+  const handleFollowToggle = (username: string, currentIsFollowing: boolean) => {
+    setOptimisticFollows((prev) => ({
+      ...prev,
+      [username]: !currentIsFollowing,
+    }));
+    followMutation.mutate({ username, isFollowing: currentIsFollowing });
   };
+  if (!isOpen) return null;
+  const displayUsers = users.map((u) => ({
+    ...u,
+    isFollowing: optimisticFollows[u.username] !== undefined ? optimisticFollows[u.username] : u.isFollowing,
+  }));
 
   return (
     <div className="fixed inset-0 z-[999] flex items-end md:items-center justify-center bg-[rgba(10,13,18,0.8)] backdrop-blur-sm sm:p-4">
@@ -79,7 +78,10 @@ export default function LikesModal({
             Likes
           </h2>
           <button
-            onClick={onClose}
+            onClick={() => {
+              setOptimisticFollows({}); 
+              onClose();
+            }}
             className="p-1 hover:bg-neutral-900 rounded-full transition-colors cursor-pointer"
           >
             <X className="w-6 h-6 text-[#FDFDFD]" />
@@ -91,12 +93,12 @@ export default function LikesModal({
             <div className="flex justify-center items-center py-10">
               <Loader2 className="w-8 h-8 text-[#7F51F9] animate-spin" />
             </div>
-          ) : localUsers.length === 0 ? (
+          ) : displayUsers.length === 0 ? (
             <div className="text-center text-[#A4A7AE] py-10 text-[14px]">
               Belum ada yang menyukai postingan ini.
             </div>
           ) : (
-            localUsers.map((user) => (
+            displayUsers.map((user) => (
               <div
                 key={user.id}
                 className="flex items-center justify-between w-full h-[56px]"
@@ -128,9 +130,7 @@ export default function LikesModal({
                 </div>
 
                 <button
-                  onClick={() =>
-                    handleFollowToggle(user.username, user.isFollowing)
-                  }
+                  onClick={() => handleFollowToggle(user.username, user.isFollowing)}
                   className={`flex items-center justify-center gap-[8px] h-[40px] rounded-[100px] transition-all cursor-pointer shrink-0 ${
                     user.isFollowing
                       ? "px-[16px] border border-[#181D27] text-[#FDFDFD] hover:bg-neutral-900"

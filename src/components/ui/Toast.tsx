@@ -8,7 +8,6 @@ interface ToastProps {
 }
 
 export const Toast = ({ message, onClose, type = 'success' }: ToastProps) => {
-  // Auto close setelah 3 detik
   useEffect(() => {
     const timer = setTimeout(onClose, 3000);
     return () => clearTimeout(timer);

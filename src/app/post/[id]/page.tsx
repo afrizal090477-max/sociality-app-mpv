@@ -1,57 +1,53 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import axiosInstance from '@/lib/axios';
 import { toast } from 'sonner';
 import { PostCard, PostType } from '@/components/features/PostCard';
+import { api } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
+import { formatTimeAgo } from '@/lib/dayjs'; 
 
 export default function PostDetail() {
   const params = useParams();
   const router = useRouter();
-  const { id } = params;
-
-  const [post, setPost] = useState<PostType | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchPostDetail = async () => {
+  const id = params.id as string;
+  const { data: post, isLoading } = useQuery({
+    queryKey: ['postDetail', id],
+    queryFn: async () => {
       try {
-        const response = await axiosInstance.get(`/posts/${id}`);
+        const response = await api.get(`/posts/${id}`);
         const item = response.data?.data?.post || response.data?.data;
-        if (item) {
-          const formattedPost: PostType = {
-            id: item.id,
-            user: {
-              username: item.author?.username || 'Unknown',
-              avatarUrl: item.author?.avatarUrl || null,
-            },
-            imageUrl: item.imageUrl,
-            caption: item.caption || "",
-            likesCount: item.likeCount || 0,
-            commentsCount: item.commentCount || 0,
-            sharesCount: 0,
-            createdAt: new Date(item.createdAt).toLocaleDateString('id-ID', {
-              day: 'numeric', month: 'long', year: 'numeric'
-            }),
-            isLiked: item.likedByMe || false,
-            isSaved: item.savedByMe || true, 
-          };
-          setPost(formattedPost);
-        }
+        
+        if (!item) throw new Error("Post not found");
+
+        const formattedPost: PostType = {
+          id: item.id,
+          user: {
+            username: item.author?.username || 'Unknown',
+            avatarUrl: item.author?.avatarUrl || null,
+          },
+          imageUrl: item.imageUrl,
+          caption: item.caption || "",
+          likesCount: item.likeCount || 0,
+          commentsCount: item.commentCount || 0,
+          sharesCount: 0,
+          createdAt: formatTimeAgo(item.createdAt),
+          isLiked: item.likedByMe || false,
+          isSaved: item.savedByMe || false, 
+        };
+        
+        return formattedPost;
       } catch (error) {
         console.error("Gagal mengambil detail postingan:", error);
         toast.error("Gagal memuat postingan");
-      } finally {
-        setIsLoading(false);
+        throw error;
       }
-    };
-
-    if (id) {
-      fetchPostDetail();
-    }
-  }, [id]);
+    },
+    enabled: !!id, 
+    refetchOnWindowFocus: false,
+  });
 
   return (
     <div className="min-h-screen bg-[#000000] text-white font-['SF_Pro'] pb-[100px] md:pb-[40px]">

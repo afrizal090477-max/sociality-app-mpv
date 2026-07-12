@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { store } from '@/store/store'; 
+import { logout } from '@/store/authSlice';
 
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://be-social-media-api-production.up.railway.app/api';
@@ -8,6 +10,7 @@ const axiosInstance = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
 
 axiosInstance.interceptors.request.use(
   (config) => {
@@ -24,6 +27,7 @@ axiosInstance.interceptors.request.use(
   }
 );
 
+
 axiosInstance.interceptors.response.use(
   (response) => {
     return response;
@@ -32,7 +36,11 @@ axiosInstance.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       if (typeof window !== 'undefined') {
         console.error('Session expired. Redirecting to login...');
-        localStorage.removeItem('token');
+        store.dispatch(logout());
+        const currentPath = window.location.pathname;
+        if (currentPath !== '/login' && currentPath !== '/register') {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);

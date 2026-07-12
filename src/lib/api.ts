@@ -2,7 +2,8 @@ import axios from 'axios';
 import { store } from '@/store/store';
 import { logout } from '@/store/authSlice';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://be-social-media-api-production.up.railway.app';
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://be-social-media-api-production.up.railway.app/api';
 
 export const api = axios.create({
   baseURL: BASE_URL,

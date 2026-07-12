@@ -1,29 +1,21 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react'; 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Plus, User } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store/store'; 
 
 export function BottomNav() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const pathname = usePathname();
-
-  useEffect(() => {
-    const verifyAuth = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        setIsLoggedIn(true);
-      }
-    };
-    verifyAuth();
-  }, [pathname]);
-
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const hiddenPages = ['/add-post', '/edit-profile', '/login', '/register'];
   const isFullScreenMode = pathname.startsWith('/post/') || hiddenPages.includes(pathname);
-  if (!isLoggedIn || isFullScreenMode) return null;
+  if (!isAuthenticated || isFullScreenMode) return null;
   const isHomeActive = pathname === '/';
   const isProfileActive = pathname === '/profile';
+
 
   return (
     <div className="fixed bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 z-50 flex flex-row justify-center items-center p-0 gap-[45px] w-[345px] md:w-[360px] h-[64px] md:h-[80px] bg-[rgba(10,13,18,0.8)] border border-[#181D27] rounded-[1000px] shadow-2xl backdrop-blur-[50px]">
