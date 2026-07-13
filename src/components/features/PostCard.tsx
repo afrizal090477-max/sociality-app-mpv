@@ -156,7 +156,6 @@ export function PostCard({ post, priority }: PostCardProps) {
       setIsLoadingLikes(false);
     }
   };
-  
   const captionText = post.caption || "";
   const isLongCaption = captionText.length > 90;
   
@@ -164,10 +163,8 @@ export function PostCard({ post, priority }: PostCardProps) {
     <>
       <article className="flex flex-col items-start px-[16px] md:px-0 py-0 gap-[8px] md:gap-[12px] w-full max-w-[393px] md:max-w-[600px] mx-auto">
         <div className="flex flex-col items-start p-0 gap-[8px] md:gap-[12px] w-full">
-          <Link 
-            href={`/profile/${post.user.username}`}
-            className="flex flex-row items-center p-0 gap-[8px] md:gap-[12px] w-full h-[44px] md:h-[64px] hover:opacity-80 transition-opacity cursor-pointer"
-          >
+          
+          <Link href={`/profile/${post.user.username}`} className="flex flex-row items-center p-0 gap-[8px] md:gap-[12px] w-full h-[44px] md:h-[64px] hover:opacity-80 transition-opacity cursor-pointer">
             <div className="relative flex items-center justify-center w-[44px] h-[44px] md:w-[64px] md:h-[64px] rounded-full overflow-hidden bg-neutral-900 border border-neutral-800 shrink-0">
               {post.user.avatarUrl ? (
                 <Image src={post.user.avatarUrl} alt={post.user.username} fill sizes="(max-width: 768px) 44px, 64px" className="object-cover" />

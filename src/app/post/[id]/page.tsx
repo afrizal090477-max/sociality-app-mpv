@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { useParams } from 'next/navigation';
+import { Loader2 } from 'lucide-react'; 
 import { toast } from 'sonner';
 import { PostCard, PostType } from '@/components/features/PostCard';
 import { api } from '@/lib/api';
@@ -11,8 +11,8 @@ import { formatTimeAgo } from '@/lib/dayjs';
 
 export default function PostDetail() {
   const params = useParams();
-  const router = useRouter();
   const id = params.id as string;
+  
   const { data: post, isLoading } = useQuery({
     queryKey: ['postDetail', id],
     queryFn: async () => {
@@ -51,26 +51,8 @@ export default function PostDetail() {
 
   return (
     <div className="min-h-screen bg-[#000000] text-white font-['SF_Pro'] pb-[100px] md:pb-[40px]">
-      <div className="sticky top-0 z-50 flex flex-row items-center px-[16px] h-[64px] bg-[#000000] border-b border-[#181D27] md:hidden">
-        <button onClick={() => router.back()} className="p-1 cursor-pointer">
-          <ArrowLeft className="w-[24px] h-[24px] text-[#FDFDFD]" />
-        </button>
-        <span className="flex-1 text-[16px] font-bold text-[#FDFDFD] text-center ml-[-32px]">
-          Post
-        </span>
-      </div>
-
       <div className="flex flex-col items-center w-full max-w-[812px] mx-auto pt-[16px] md:pt-[40px] px-[16px] md:px-0">
-        <div className="hidden md:flex w-full mb-[24px]">
-          <button 
-            onClick={() => router.back()} 
-            className="flex items-center gap-[8px] text-[#A4A7AE] hover:text-[#FDFDFD] transition-colors cursor-pointer"
-          >
-            <ArrowLeft className="w-[20px] h-[20px]" />
-            <span className="text-[16px] font-bold">Back to Profile</span>
-          </button>
-        </div>
-
+        
         {isLoading ? (
           <div className="flex justify-center items-center py-20 w-full">
             <Loader2 className="w-8 h-8 text-[#7F51F9] animate-spin" />
@@ -82,6 +64,7 @@ export default function PostDetail() {
             Postingan tidak ditemukan.
           </div>
         )}
+
       </div>
     </div>
   );

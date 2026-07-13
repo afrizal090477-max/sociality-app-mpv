@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react'; 
+import React, { useState, useEffect } from 'react'; 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Plus, User } from 'lucide-react';
@@ -10,15 +10,40 @@ import { RootState } from '@/store/store';
 export function BottomNav() {
   const pathname = usePathname();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
   const hiddenPages = ['/add-post', '/edit-profile', '/login', '/register'];
   const isFullScreenMode = pathname.startsWith('/post/') || hiddenPages.includes(pathname);
+  
   if (!isAuthenticated || isFullScreenMode) return null;
+  
   const isHomeActive = pathname === '/';
   const isProfileActive = pathname === '/profile';
 
-
   return (
-    <div className="fixed bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 z-50 flex flex-row justify-center items-center p-0 gap-[45px] w-[345px] md:w-[360px] h-[64px] md:h-[80px] bg-[rgba(10,13,18,0.8)] border border-[#181D27] rounded-[1000px] shadow-2xl backdrop-blur-[50px]">
+    <div 
+      className={`fixed bottom-6 md:bottom-10 left-1/2 z-50 flex flex-row justify-center items-center p-0 gap-[45px] w-[345px] md:w-[360px] h-[64px] md:h-[80px] bg-[rgba(10,13,18,0.8)] border border-[#181D27] rounded-[1000px] shadow-2xl backdrop-blur-[50px] transition-transform duration-300 ease-in-out ${
+        isVisible ? 'transform -translate-x-1/2 translate-y-0' : 'transform -translate-x-1/2 translate-y-[150px]'
+      }`}
+    >
       <Link href="/" className="flex flex-col justify-center items-center gap-[2px] md:gap-[4px] w-[94px] h-[46px] md:h-[58px] group">
         <Home className={`w-[20px] h-[20px] md:w-[24px] md:h-[24px] group-hover:opacity-80 transition-all ${isHomeActive ? 'text-[#7F51F9]' : 'text-[#FDFDFD]'}`} />
         <span className={`text-[12px] md:text-[16px] leading-[24px] md:leading-[30px] tracking-[-0.02em] font-['SF_Pro'] transition-colors ${isHomeActive ? 'font-bold text-[#7F51F9]' : 'font-normal text-[#FDFDFD]'}`}>
